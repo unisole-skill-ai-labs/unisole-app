@@ -5,6 +5,7 @@ import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { useForgotPasswordMutation } from "../../store/apiSlice";
+import { extractErrorMessage } from "../../utils/error";
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -21,7 +22,7 @@ export default function ForgotPasswordForm() {
       await forgotPassword({ email }).unwrap();
       setIsSuccess(true);
     } catch (err) {
-      setErrorMsg(err.data?.error || err.data?.message || "Failed to send reset email");
+      setErrorMsg(extractErrorMessage(err, "Failed to send reset email"));
     }
   };
 

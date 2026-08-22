@@ -9,6 +9,8 @@ import GoogleButton from "./GoogleButton";
 import { useLoginMutation } from "../../store/apiSlice";
 import { setCredentials } from "../../store/authSlice";
 
+import { extractErrorMessage } from "../../utils/error";
+
 export default function LoginForm() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +33,7 @@ export default function LoginForm() {
       dispatch(setCredentials(response));
       navigate(from, { replace: true });
     } catch (err) {
-      setErrorMsg(err.data?.error || err.data?.message || "Invalid email or password");
+      setErrorMsg(extractErrorMessage(err, "Invalid email or password"));
     }
   };
 
@@ -115,7 +117,7 @@ export default function LoginForm() {
 
       <GoogleButton
         onSuccess={() => navigate(from, { replace: true })}
-        onError={(err) => setErrorMsg(err.data?.error || "Google login failed")}
+        onError={(err) => setErrorMsg(extractErrorMessage(err, "Google login failed"))}
       />
 
       {/* Quick 1-Click Demo Logins */}

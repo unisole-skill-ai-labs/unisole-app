@@ -22,6 +22,7 @@ import {
   useEnrollCourseMutation,
   useGetReviewsQuery,
 } from "../store/apiSlice";
+import { extractErrorMessage } from "../utils/error";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import Card from "../components/ui/Card";
@@ -66,7 +67,7 @@ export default function CourseDetailPage() {
       if (err.status === 409) {
         setEnrollSuccessMsg("You are already enrolled in this course!");
       } else {
-        setEnrollErrorMsg(err.data?.error || err.data?.message || "Failed to enroll. Please try again.");
+        setEnrollErrorMsg(extractErrorMessage(err, "Failed to enroll. Please try again."));
       }
     }
   };

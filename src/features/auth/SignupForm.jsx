@@ -9,6 +9,8 @@ import GoogleButton from "./GoogleButton";
 import { useRegisterMutation } from "../../store/apiSlice";
 import { setCredentials } from "../../store/authSlice";
 
+import { extractErrorMessage } from "../../utils/error";
+
 export default function SignupForm() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -35,7 +37,7 @@ export default function SignupForm() {
       dispatch(setCredentials(response));
       navigate("/enrolled");
     } catch (err) {
-      setErrorMsg(err.data?.error || err.data?.message || "Registration failed. Try a different email.");
+      setErrorMsg(extractErrorMessage(err, "Registration failed. Try a different email."));
     }
   };
 
@@ -115,7 +117,7 @@ export default function SignupForm() {
       <GoogleButton
         label="Sign up with Google"
         onSuccess={() => navigate("/enrolled")}
-        onError={(err) => setErrorMsg(err.data?.error || "Google sign up failed")}
+        onError={(err) => setErrorMsg(extractErrorMessage(err, "Google sign up failed"))}
       />
 
       <div className="mt-6 text-center text-xs text-slate-500">

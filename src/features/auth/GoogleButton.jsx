@@ -4,6 +4,8 @@ import { useGoogleLoginMutation } from "../../store/apiSlice";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "../../store/authSlice";
 
+import { extractErrorMessage } from "../../utils/error";
+
 export default function GoogleButton({ onSuccess, onError, label = "Continue with Google" }) {
   const [googleLogin, { isLoading: isApiLoading }] = useGoogleLoginMutation();
   const [isFetchingProfile, setIsFetchingProfile] = useState(false);
@@ -38,7 +40,7 @@ export default function GoogleButton({ onSuccess, onError, label = "Continue wit
         if (onSuccess) onSuccess(res);
       } catch (err) {
         if (onError) {
-          onError(err.data?.error || err.data?.message || err.message || "Google sign-in failed");
+          onError(extractErrorMessage(err, "Google sign-in failed"));
         }
       } finally {
         setIsFetchingProfile(false);
