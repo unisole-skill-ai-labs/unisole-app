@@ -1,8 +1,17 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { setCredentials, logout } from "./authSlice";
 
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== "undefined" &&
+  window.location.hostname !== "localhost" &&
+  window.location.hostname !== "127.0.0.1"
+    ? "https://api.unisole.org"
+    : "")
+).replace(/\/+$/, "");
+
 const rawBaseQuery = fetchBaseQuery({
-  baseUrl: "",
+  baseUrl: API_BASE_URL,
   prepareHeaders: (headers, { getState }) => {
     const token = getState().auth.token;
     if (token) {
