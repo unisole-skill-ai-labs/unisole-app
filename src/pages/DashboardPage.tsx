@@ -20,62 +20,42 @@ const DEFAULT_COMPLETED_ACTIVITIES = [
   {
     id: "comp-1",
     type: "assignment" as const,
-    category: "Assignment",
-    course: "Business Intelligence using Excel",
-    title: "Assignment 1",
-    datePrefix: "Due",
-    date: "31 Oct 26 11:59 PM",
+    category: "Hands-on Lab",
+    course: "Generative AI Engineering",
+    title: "Week 1 Lab: Real Dataset Profiling with Pandas",
+    datePrefix: "Submitted",
+    date: "28 Sep 26 5:30 PM",
     statusText: "Evaluation Pending",
   },
   {
     id: "comp-2",
     type: "quiz" as const,
-    category: "Quiz",
-    course: "Machine Learning AIML",
-    title: "Code Eval with AI mentor",
-    datePrefix: "Due",
-    date: "31 May 26 5:29 AM",
-    statusText: "Marks: 0/1",
+    category: "Graded Quiz",
+    course: "Generative AI Engineering",
+    title: "Week 1 Graded Quiz: Data & Linux Drills",
+    datePrefix: "Completed",
+    date: "28 Sep 26 4:15 PM",
+    statusText: "Marks: 10/10",
   },
   {
     id: "comp-3",
-    type: "quiz" as const,
-    category: "Quiz",
-    course: "Machine Learning AIML",
-    title: "K-means Clustering: Graded Quiz",
-    datePrefix: "Due",
-    date: "31 May 26 5:29 AM",
-    statusText: "Marks: 1/10",
+    type: "assignment" as const,
+    category: "Milestone",
+    course: "AI Entrepreneurship & Innovation",
+    title: "Weekend 1 Milestone: Problem Statement Brief",
+    datePrefix: "Submitted",
+    date: "27 Sep 26 6:00 PM",
+    statusText: "Evaluation Complete",
   },
   {
     id: "comp-4",
     type: "quiz" as const,
-    category: "Quiz",
-    course: "Machine Learning AIML",
-    title: "Weekly Quiz - Decision Tree",
-    datePrefix: "Due",
-    date: "31 May 26 5:29 AM",
-    statusText: "Marks: 0/10",
-  },
-  {
-    id: "comp-5",
-    type: "quiz" as const,
-    category: "Quiz",
-    course: "Machine Learning AIML",
-    title: "Weekly Quiz - Linear Regression",
-    datePrefix: "Due",
-    date: "31 May 26 5:29 AM",
-    statusText: "Marks: 0/10",
-  },
-  {
-    id: "comp-6",
-    type: "quiz" as const,
-    category: "Quiz",
-    course: "Introduction to Marketing",
-    title: "Essay Quiz",
-    datePrefix: "From",
-    date: "07 Aug 25 12:00 AM",
-    statusText: "Evaluation Pending",
+    category: "Graded Quiz",
+    course: "AI Entrepreneurship & Innovation",
+    title: "Weekend 1 Graded Quiz: Design Thinking Foundations",
+    datePrefix: "Completed",
+    date: "27 Sep 26 2:30 PM",
+    statusText: "Marks: 10/10",
   },
 ];
 
@@ -109,16 +89,18 @@ export default function DashboardPage() {
     return submissions.filter((s) => s.status === "APPROVED");
   }, [submissions]);
 
-  // Top active course banner matching Great Learning layout
+  // Top active course banner matching curriculum
   const topCourse = useMemo(() => {
     const primary = enrolledCourses[0];
-    const title = primary?.title || primary?.name || "Machine Learning AIML";
-    const courseId = primary?.id || "ml-aiml";
+    const title = primary?.title || primary?.name || "Generative AI Engineering";
+    const courseId = primary?.id || "cs-genai";
     return {
       id: courseId,
       title: title,
-      subtitle: "Hierarchical Clustering · 28 Mins 23 Secs Left",
-      path: primary?.id ? `/learn/${primary.id}` : "/catalog",
+      subtitle: courseId.includes("common") || courseId.includes("entrepreneur")
+        ? "Weekend 1: Design Thinking & Empathy Mapping · 25 Mins Left"
+        : "Week 1: Data Engineering for AI · 14 Mins Left",
+      path: `/learn/${courseId}`,
     };
   }, [enrolledCourses]);
 

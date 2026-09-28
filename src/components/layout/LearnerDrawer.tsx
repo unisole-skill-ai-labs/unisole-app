@@ -43,9 +43,14 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
   });
 
   const enrolledCourses = useMemo(() => {
-    return myPathways
+    const list = myPathways
       .map((item: any) => item.pathway || item)
       .filter((p: any) => p && (p.title || p.name));
+    if (list.length > 0) return list;
+    return [
+      { id: "cs-genai", title: "Generative AI Engineering" },
+      { id: "cs-common", title: "AI Entrepreneurship & Innovation" },
+    ];
   }, [myPathways]);
 
   useEffect(() => {
@@ -54,7 +59,7 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
     }
   }, [enrolledCourses, selectedCohort]);
 
-  const activeCohortTitle = selectedCohort || (enrolledCourses[0]?.title || enrolledCourses[0]?.name) || "No Enrolled Courses";
+  const activeCohortTitle = selectedCohort || (enrolledCourses[0]?.title || enrolledCourses[0]?.name) || "Generative AI Engineering";
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -250,8 +255,12 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
                         onClick={() => {
                           setSelectedCohort(title);
                           setCohortDropdownOpen(false);
+                          if (c.id) {
+                            navigate(`/learn/${c.id}`);
+                            onClose();
+                          }
                         }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-left transition-colors ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-left transition-colors cursor-pointer ${
                           isSelected
                             ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold"
                             : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
