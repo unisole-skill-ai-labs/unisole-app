@@ -238,7 +238,7 @@ export default function ProfilePage() {
 
         {/* Footer */}
         <div className="pt-16 pb-8 text-center space-y-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-          <p>© 2013 - 2026 Unisole Skill AI Labs Pvt. Ltd. All rights reserved</p>
+          <p>© 2026 Unisole Skill AI Labs Pvt. Ltd. All rights reserved</p>
           <div className="flex items-center justify-center gap-2 text-[11px]">
             <Link to="/privacy" className="hover:text-zinc-600 dark:hover:text-zinc-300">
               Privacy
