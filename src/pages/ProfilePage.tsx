@@ -83,7 +83,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-white dark:bg-[#0B0D13] py-6 sm:py-10 transition-colors">
-      <div className="max-w-xl mx-auto px-5 sm:px-6 space-y-6 animate-fade-in">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 space-y-6 animate-fade-in">
         {/* Header */}
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">

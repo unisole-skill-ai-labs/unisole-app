@@ -146,8 +146,8 @@ export default function DashboardPage() {
   }, [completedSubmissions, enrolledCourses]);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-50/70 dark:bg-[#0B0D13] py-4 sm:py-6 transition-colors">
-      <div className="max-w-xl mx-auto px-4 space-y-5">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50/70 dark:bg-[#0B0D13] py-4 sm:py-8 transition-colors">
+      <div className="max-w-2xl lg:max-w-3xl mx-auto px-4 sm:px-6 space-y-6">
         {/* Top Active Course & Next Lesson Card (Great Learning Style) */}
         <div
           onClick={() => navigate(topCourse.path)}

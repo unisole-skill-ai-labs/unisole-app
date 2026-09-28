@@ -112,7 +112,7 @@ export default function ActivitiesPage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#F8FAFC] dark:bg-[#0B0D13] py-5 sm:py-8 transition-colors">
-      <div className="max-w-xl mx-auto px-4 space-y-5 animate-fade-in">
+      <div className="max-w-2xl lg:max-w-3xl mx-auto px-4 sm:px-6 space-y-6 animate-fade-in">
         {/* Title Bar with Filter Button */}
         <div className="flex items-center justify-between relative">
           <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
