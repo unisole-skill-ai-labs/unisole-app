@@ -16,6 +16,11 @@ import {
   Layers,
   X,
   Menu,
+  Folder,
+  CreditCard,
+  Newspaper,
+  Settings,
+  CheckCircle2,
 } from "lucide-react";
 import { logout } from "../../store/authSlice";
 import { useTheme } from "../../context/ThemeContext";
@@ -33,6 +38,7 @@ export default function Header() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [feeModalOpen, setFeeModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -194,67 +200,104 @@ export default function Header() {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setProfileOpen((prev) => !prev)}
-                    className="flex items-center gap-2 p-1.5 pr-2.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors border border-zinc-200/80 dark:border-zinc-800"
+                    className="flex items-center p-0.5 rounded-full hover:ring-2 hover:ring-indigo-500/30 transition-all cursor-pointer"
+                    aria-label="User Profile Menu"
                   >
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-xs font-bold shadow-xs">
-                      {user.name ? user.name.charAt(0).toUpperCase() : (user.phone ? user.phone.charAt(0) : "S")}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-xs font-bold shadow-xs overflow-hidden border border-zinc-200/80 dark:border-zinc-700">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.name || "Avatar"} className="w-full h-full object-cover" />
+                      ) : (
+                        user.name ? user.name.charAt(0).toUpperCase() : (user.phone ? user.phone.charAt(0) : "S")
+                      )}
                     </div>
-                    <span className="hidden sm:block text-xs font-bold text-zinc-800 dark:text-zinc-200 max-w-[120px] truncate">
-                      {user.name || (user.phone ? `+91 ${user.phone}` : "Student")}
-                    </span>
-                    <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
                   </button>
 
                   {/* Profile Dropdown Menu */}
                   {profileOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-200/80 dark:border-zinc-800 p-1.5 animate-fade-in z-50">
-                      <div className="px-3 py-2.5 border-b border-zinc-100 dark:border-zinc-800">
-                        <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                          {user.name || "Student Learner"}
-                        </p>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono truncate">
-                          {user.phone ? `+91 ${user.phone}` : user.email || "Verified Account"}
-                        </p>
-                        <span className="inline-block mt-1.5 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 text-[10px] font-bold">
-                          {user.role || "STUDENT"}
-                        </span>
+                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-white dark:bg-[#121622] rounded-2xl shadow-xl border border-zinc-200/90 dark:border-zinc-800 p-3 animate-fade-in z-50">
+                      {/* User Header */}
+                      <div className="flex items-center gap-3 pb-3 mb-2 border-b border-zinc-100 dark:border-zinc-800">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-sm font-bold shadow-xs shrink-0 overflow-hidden">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={user.name || "Avatar"} className="w-full h-full object-cover" />
+                          ) : (
+                            user.name ? user.name.charAt(0).toUpperCase() : (user.phone ? user.phone.charAt(0) : "S")
+                          )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                            {user.name || "Student"}
+                          </p>
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono truncate">
+                            {user.email || (user.phone ? `+91 ${user.phone}` : "learner@unisole.org")}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="py-1 space-y-0.5">
-                        {["ADMIN", "SUPER_ADMIN", "MENTOR", "MEMBER"].includes(user.role) && (
-                          <Link
-                            to="/admin"
-                            onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors border border-indigo-200/50 dark:border-indigo-800/50"
-                          >
-                            <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                            <span>Course Studio & CMS</span>
-                          </Link>
-                        )}
-                        <Link
-                          to="/enrolled"
-                          onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                        >
-                          <BookOpen className="w-4 h-4 text-indigo-500" />
-                          <span>My Enrolled Pathways</span>
-                        </Link>
+                      {/* Menu List */}
+                      <div className="space-y-0.5">
+                        {/* 1. My ePortfolio */}
                         <Link
                           to="/profile"
                           onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
                         >
-                          <User className="w-4 h-4 text-zinc-400" />
-                          <span>Profile & Account</span>
+                          <Folder className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 stroke-[2]" />
+                          <span>My ePortfolio</span>
                         </Link>
-                      </div>
 
-                      <div className="pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                        {/* 2. Fee Payment */}
                         <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left cursor-pointer"
+                          type="button"
+                          onClick={() => {
+                            setProfileOpen(false);
+                            setFeeModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors text-left cursor-pointer"
                         >
-                          <LogOut className="w-4 h-4" />
+                          <CreditCard className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 stroke-[2]" />
+                          <span>Fee Payment</span>
+                        </button>
+
+                        {/* 3. Industry Articles */}
+                        <Link
+                          to="/catalog"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
+                        >
+                          <Newspaper className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 stroke-[2]" />
+                          <span>Industry Articles</span>
+                        </Link>
+
+                        {/* 4. Settings */}
+                        <Link
+                          to="/profile"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors"
+                        >
+                          <Settings className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 stroke-[2]" />
+                          <span>Settings</span>
+                        </Link>
+
+                        {/* Admin Studio & CMS (if privileged role) */}
+                        {["ADMIN", "SUPER_ADMIN", "MENTOR", "MEMBER"].includes(user?.role) && (
+                          <Link
+                            to="/admin"
+                            onClick={() => setProfileOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors border border-indigo-200/50 dark:border-indigo-800/50"
+                          >
+                            <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 stroke-[2]" />
+                            <span>Course Studio & CMS</span>
+                          </Link>
+                        )}
+
+                        {/* 5. Logout */}
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50/70 dark:hover:bg-rose-950/30 transition-colors text-left cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0 stroke-[2]" />
                           <span>Logout</span>
                         </button>
                       </div>
@@ -329,6 +372,45 @@ export default function Header() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fee Payment Status Modal */}
+      {feeModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
+          onClick={(e) => e.target === e.currentTarget && setFeeModalOpen(false)}
+        >
+          <div className="bg-white dark:bg-[#121622] w-full max-w-sm rounded-3xl shadow-2xl border border-zinc-200/80 dark:border-zinc-800 p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Fee Payment</h3>
+              </div>
+              <button
+                onClick={() => setFeeModalOpen(false)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/30 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              <div className="text-xs space-y-0.5">
+                <p className="font-bold text-emerald-900 dark:text-emerald-200">No Pending Dues</p>
+                <p className="text-emerald-700 dark:text-emerald-400 leading-relaxed">
+                  Your tuition and fees for your enrolled programs are completely up to date and verified.
+                </p>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <Button variant="primary" size="sm" onClick={() => setFeeModalOpen(false)}>
+                Close
+              </Button>
             </div>
           </div>
         </div>
