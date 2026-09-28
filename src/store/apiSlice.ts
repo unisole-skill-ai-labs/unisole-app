@@ -75,6 +75,8 @@ export const apiSlice = createApi({
     "Progress",
     "Submissions",
     "Activities",
+    "Notes",
+    "Cohort",
   ],
   endpoints: (builder) => ({
     // ─── Auth Endpoints ──────────────────────────────────────────────────────────
@@ -220,6 +222,30 @@ export const apiSlice = createApi({
     getStudentActivities: builder.query({
       query: () => "/api/lms/activities",
       providesTags: ["Activities"],
+    }),
+    updateProfile: builder.mutation({
+      query: (body) => ({
+        url: "/api/lms/me",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    getNotes: builder.query({
+      query: (pathwayId) => (pathwayId ? `/api/lms/notes/${pathwayId}` : "/api/lms/notes"),
+      providesTags: ["Notes"],
+    }),
+    saveNote: builder.mutation({
+      query: (body) => ({
+        url: "/api/lms/notes",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Notes"],
+    }),
+    getCohortData: builder.query({
+      query: (pathwayId) => (pathwayId ? `/api/lms/cohort/${pathwayId}` : "/api/lms/cohort"),
+      providesTags: ["Cohort"],
     }),
 
     // ─── Payments & Commerce Endpoints ───────────────────────────────────────────
@@ -426,4 +452,8 @@ export const {
   useGetStudentSubmissionsQuery,
   useSubmitAssignmentMutation,
   useGetStudentActivitiesQuery,
+  useUpdateProfileMutation,
+  useGetNotesQuery,
+  useSaveNoteMutation,
+  useGetCohortDataQuery,
 } = apiSlice;

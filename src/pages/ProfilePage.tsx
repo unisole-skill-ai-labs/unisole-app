@@ -9,12 +9,14 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { updateUser, logout } from "../store/authSlice";
+import { useUpdateProfileMutation } from "../store/apiSlice";
 import Button from "../components/ui/Button";
 
 export default function ProfilePage() {
   const { user } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [updateProfileApi, { isLoading: isUpdating }] = useUpdateProfileMutation();
 
   // Edit Modal State
   const [activeModal, setActiveModal] = useState<
@@ -39,26 +41,26 @@ export default function ProfilePage() {
     );
   }
 
-  const name = user.name || "Girish";
-  const email = user.email || (user.phone ? `${user.phone}@unisole.org` : "learner@unisole.org");
+  const name = user.name || "Unisole Learner";
+  const email = user.email || (user.phone ? `${user.phone.replace(/[^0-9]/g, "")}@unisole.org` : "learner@unisole.org");
   const phone = user.phone
     ? user.phone.startsWith("+")
       ? user.phone
       : `+91 ${user.phone}`
-    : "+91 8091748041";
-  const timezone = user.timezone || "Asia/Kolkata";
-  const linkedin = user.linkedin || "";
+    : "Not Provided";
+  const timezone = user.timezone || (user.metadata as any)?.timezone || "Asia/Kolkata";
+  const linkedin = user.linkedin || (user.metadata as any)?.linkedin || "";
 
   const openEdit = (field: "name" | "email" | "phone" | "timezone" | "linkedin") => {
     if (field === "name") setEditValue(user.name || "");
     if (field === "email") setEditValue(user.email || "");
     if (field === "phone") setEditValue(user.phone || "");
-    if (field === "timezone") setEditValue(user.timezone || "Asia/Kolkata");
-    if (field === "linkedin") setEditValue(user.linkedin || "");
+    if (field === "timezone") setEditValue(timezone);
+    if (field === "linkedin") setEditValue(linkedin);
     setActiveModal(field);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeModal) return;
 
@@ -70,6 +72,11 @@ export default function ProfilePage() {
     if (activeModal === "linkedin") updates.linkedin = editValue.trim();
 
     dispatch(updateUser(updates));
+    try {
+      await updateProfileApi(updates).unwrap();
+    } catch {
+      // Non-critical local sync
+    }
     setActiveModal(null);
   };
 
