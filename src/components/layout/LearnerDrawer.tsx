@@ -34,12 +34,8 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
-  const COURSE_STORAGE_KEY = "unisole_selected_course";
-
   const [cohortDropdownOpen, setCohortDropdownOpen] = useState(false);
-  const [selectedCohort, setSelectedCohort] = useState<string>(() => {
-    return localStorage.getItem(COURSE_STORAGE_KEY) || "";
-  });
+  const [selectedCohort, setSelectedCohort] = useState<string>("");
   const [activeModal, setActiveModal] = useState<"support" | "notifications" | null>(null);
 
   const { data: myPathways = [] } = useGetMyPathwaysQuery(undefined, {
@@ -53,28 +49,10 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
   }, [myPathways]);
 
   useEffect(() => {
-    if (enrolledCourses.length > 0) {
-      const exists = enrolledCourses.some((c: any) => (c.title || c.name) === selectedCohort);
-      if (!selectedCohort || !exists) {
-        const initial = enrolledCourses[0].title || enrolledCourses[0].name;
-        setSelectedCohort(initial);
-        localStorage.setItem(COURSE_STORAGE_KEY, initial);
-      }
+    if (enrolledCourses.length > 0 && !selectedCohort) {
+      setSelectedCohort(enrolledCourses[0].title || enrolledCourses[0].name);
     }
   }, [enrolledCourses, selectedCohort]);
-
-  // Sync with dashboard and external events
-  useEffect(() => {
-    const handleCourseChange = (e: any) => {
-      if (e.detail) {
-        setSelectedCohort(e.detail);
-      }
-    };
-    window.addEventListener("unisole:course-change", handleCourseChange as any);
-    return () => {
-      window.removeEventListener("unisole:course-change", handleCourseChange as any);
-    };
-  }, []);
 
   const activeCohortTitle = selectedCohort || (enrolledCourses[0]?.title || enrolledCourses[0]?.name) || "No Enrolled Courses";
 
@@ -272,8 +250,6 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
                         onClick={() => {
                           setSelectedCohort(title);
                           setCohortDropdownOpen(false);
-                          localStorage.setItem(COURSE_STORAGE_KEY, title);
-                          window.dispatchEvent(new CustomEvent("unisole:course-change", { detail: title }));
                         }}
                         className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-left transition-colors ${
                           isSelected
