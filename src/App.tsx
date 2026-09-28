@@ -9,6 +9,7 @@ import DashboardPage from "./pages/DashboardPage";
 import CatalogPage from "./pages/CatalogPage";
 import PathwayDetailPage from "./pages/PathwayDetailPage";
 import EnrolledCoursesPage from "./pages/EnrolledCoursesPage";
+import ActivitiesPage from "./pages/ActivitiesPage";
 import LmsPlayerPage from "./pages/LmsPlayerPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -107,6 +108,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <EnrolledCoursesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="activities"
+          element={
+            <ProtectedRoute>
+              <ActivitiesPage />
             </ProtectedRoute>
           }
         />

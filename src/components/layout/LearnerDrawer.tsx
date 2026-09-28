@@ -104,7 +104,7 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
       return (location.pathname === "/" || location.pathname === "/dashboard") && !tab;
     }
     if (type === "activities") {
-      return tab === "activities";
+      return location.pathname === "/activities" || tab === "activities";
     }
     if (type === "courses") {
       return location.pathname === "/enrolled" || location.pathname.startsWith("/courses");
@@ -127,7 +127,7 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
       id: "activities",
       name: "Activities",
       icon: Calendar,
-      to: "/?tab=activities",
+      to: "/activities",
       isAction: false,
     },
     {

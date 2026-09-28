@@ -293,7 +293,7 @@ export default function DashboardPage() {
 
               {/* Solid Blue Button */}
               <button
-                onClick={() => navigate("/enrolled")}
+                onClick={() => navigate("/activities")}
                 className="mt-5 inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 px-6 rounded-full shadow-xs transition-colors cursor-pointer"
               >
                 <span>View All Activities</span>
