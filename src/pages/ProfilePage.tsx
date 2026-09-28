@@ -1,19 +1,14 @@
-import React from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  User,
-  Phone,
-  BookOpen,
-  LogOut,
-  Sparkles,
-  Compass,
   Mail,
-  ShieldCheck,
-  GraduationCap,
+  Phone,
+  Globe,
+  X,
+  CheckCircle2,
 } from "lucide-react";
-import { logout } from "../store/authSlice";
-import { useGetMyPathwaysQuery } from "../store/apiSlice";
+import { updateUser, logout } from "../store/authSlice";
 import Button from "../components/ui/Button";
 
 export default function ProfilePage() {
@@ -21,131 +16,334 @@ export default function ProfilePage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { data: myPathways = [] } = useGetMyPathwaysQuery(undefined);
+  // Edit Modal State
+  const [activeModal, setActiveModal] = useState<
+    "name" | "email" | "phone" | "timezone" | "linkedin" | "resetPassword" | null
+  >(null);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate("/login");
-  };
+  const [editValue, setEditValue] = useState("");
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+        <div className="text-center space-y-3">
+          <p className="text-sm text-zinc-500">Please login to view account settings.</p>
+          <Link to="/login">
+            <Button variant="primary" size="sm">
+              Login to Unisole
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
-  const college = user.collegeName || user.college || "";
-  const branch = user.branch || "";
+  const name = user.name || "Girish";
+  const email = user.email || (user.phone ? `${user.phone}@unisole.org` : "learner@unisole.org");
+  const phone = user.phone
+    ? user.phone.startsWith("+")
+      ? user.phone
+      : `+91 ${user.phone}`
+    : "+91 8091748041";
+  const timezone = user.timezone || "Asia/Kolkata";
+  const linkedin = user.linkedin || "";
+
+  const openEdit = (field: "name" | "email" | "phone" | "timezone" | "linkedin") => {
+    if (field === "name") setEditValue(user.name || "");
+    if (field === "email") setEditValue(user.email || "");
+    if (field === "phone") setEditValue(user.phone || "");
+    if (field === "timezone") setEditValue(user.timezone || "Asia/Kolkata");
+    if (field === "linkedin") setEditValue(user.linkedin || "");
+    setActiveModal(field);
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeModal) return;
+
+    const updates: Record<string, string> = {};
+    if (activeModal === "name") updates.name = editValue.trim();
+    if (activeModal === "email") updates.email = editValue.trim();
+    if (activeModal === "phone") updates.phone = editValue.trim();
+    if (activeModal === "timezone") updates.timezone = editValue.trim();
+    if (activeModal === "linkedin") updates.linkedin = editValue.trim();
+
+    dispatch(updateUser(updates));
+    setActiveModal(null);
+  };
+
+  const handleTriggerReset = () => {
+    setResetSuccess(true);
+    setTimeout(() => {
+      setResetSuccess(false);
+      setActiveModal(null);
+    }, 2500);
+  };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 space-y-8 animate-fade-in">
-      {/* Profile Header Card */}
-      <div className="p-6 sm:p-8 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl shadow-xl">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
-          <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-black text-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              {user.name ? user.name.charAt(0).toUpperCase() : (user.phone ? user.phone.charAt(0) : "S")}
-            </div>
+    <div className="min-h-[calc(100vh-4rem)] bg-white dark:bg-[#0B0D13] py-6 sm:py-10 transition-colors">
+      <div className="max-w-xl mx-auto px-5 sm:px-6 space-y-6 animate-fade-in">
+        {/* Header */}
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
+            Account Settings
+          </h1>
+        </div>
 
-            <div className="space-y-1.5">
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100">{user.name || "Student Learner"}</h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 text-xs font-bold font-mono">
-                  {user.role || "STUDENT"}
+        {/* Profile Card / Identity */}
+        <div className="space-y-4 pt-1">
+          {/* Avatar circle */}
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border border-zinc-200/90 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shadow-xs">
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt={name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-tr from-slate-200 via-zinc-300 to-slate-400 dark:from-zinc-800 dark:to-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-200 text-2xl font-bold">
+                {name.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+
+          {/* User Name with Edit */}
+          <div className="flex items-center gap-3">
+            <span className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100">
+              {name}
+            </span>
+            <button
+              onClick={() => openEdit("name")}
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline cursor-pointer"
+            >
+              Edit
+            </button>
+          </div>
+
+          {/* Details List (Email, Phone, Timezone) */}
+          <div className="space-y-2.5 pt-1 text-sm">
+            {/* Email Row */}
+            <div className="flex items-center justify-between py-0.5">
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                <Mail className="w-4 h-4 text-zinc-700 dark:text-zinc-300 shrink-0 stroke-[1.8]" />
+                <span className="text-zinc-800 dark:text-zinc-200 truncate font-normal">
+                  {email}
                 </span>
               </div>
+              <button
+                onClick={() => openEdit("email")}
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline shrink-0 cursor-pointer"
+              >
+                Edit
+              </button>
+            </div>
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                {user.phone && (
-                  <p className="flex items-center gap-1.5 font-mono">
-                    <Phone className="w-3.5 h-3.5 text-indigo-500" />
-                    +91 {user.phone}
-                  </p>
-                )}
-
-                {user.email && (
-                  <p className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-indigo-500" />
-                    {user.email}
-                  </p>
-                )}
-
-                {college && (
-                  <p className="flex items-center gap-1.5">
-                    <GraduationCap className="w-3.5 h-3.5 text-indigo-500" />
-                    {college}
-                  </p>
-                )}
-
-                {branch && (
-                  <p className="flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
-                    {branch}
-                  </p>
-                )}
+            {/* Phone Row */}
+            <div className="flex items-center justify-between py-0.5">
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                <Phone className="w-4 h-4 text-zinc-700 dark:text-zinc-300 shrink-0 stroke-[1.8]" />
+                <span className="text-zinc-800 dark:text-zinc-200 truncate font-normal">
+                  {phone}
+                </span>
               </div>
+              <button
+                onClick={() => openEdit("phone")}
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline shrink-0 cursor-pointer"
+              >
+                Edit
+              </button>
+            </div>
+
+            {/* Timezone Row */}
+            <div className="flex items-center justify-between py-0.5">
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                <Globe className="w-4 h-4 text-zinc-700 dark:text-zinc-300 shrink-0 stroke-[1.8]" />
+                <span className="text-zinc-800 dark:text-zinc-200 truncate font-normal">
+                  {timezone}
+                </span>
+              </div>
+              <button
+                onClick={() => openEdit("timezone")}
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline shrink-0 cursor-pointer"
+              >
+                Edit
+              </button>
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            icon={LogOut}
-            onClick={handleLogout}
-            className="text-rose-600 border-rose-200 dark:border-rose-800 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
-          >
-            Logout
-          </Button>
+          {/* Reset Password Action */}
+          <div className="pt-2">
+            <button
+              onClick={() => setActiveModal("resetPassword")}
+              className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline cursor-pointer"
+            >
+              Reset Password
+            </button>
+          </div>
         </div>
 
-        {/* Learning Stats Row */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800 text-center">
-          <div className="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-850">
-            <span className="block text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100">{myPathways.length}</span>
-            <span className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase font-mono">Enrolled Pathways</span>
-          </div>
+        {/* Section Divider */}
+        <hr className="border-zinc-200/80 dark:border-zinc-800/80 my-4" />
 
-          <div className="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-200/50 dark:border-zinc-850">
-            <span className="block text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">Active</span>
-            <span className="text-[10px] sm:text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase font-mono">Membership Status</span>
+        {/* Professional Details Section */}
+        <div className="space-y-3">
+          <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+            Professional Details
+          </h2>
+
+          <div className="flex items-center gap-2.5">
+            {/* LinkedIn Logo SVG */}
+            <svg
+              className="w-5 h-5 text-blue-600 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+              <rect x="2" y="9" width="4" height="12" />
+              <circle cx="4" cy="4" r="2" />
+            </svg>
+
+            {linkedin ? (
+              <div className="flex items-center gap-2 min-w-0">
+                <a
+                  href={linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline truncate"
+                >
+                  {linkedin}
+                </a>
+                <button
+                  onClick={() => openEdit("linkedin")}
+                  className="text-xs font-semibold text-blue-600 hover:underline cursor-pointer"
+                >
+                  Edit
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => openEdit("linkedin")}
+                className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline cursor-pointer"
+              >
+                Add LinkedIn
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="pt-16 pb-8 text-center space-y-1.5 text-xs text-zinc-400 dark:text-zinc-500">
+          <p>© 2013 - 2026 Unisole Skill AI Labs Pvt. Ltd. All rights reserved</p>
+          <div className="flex items-center justify-center gap-2 text-[11px]">
+            <Link to="/privacy" className="hover:text-zinc-600 dark:hover:text-zinc-300">
+              Privacy
+            </Link>
+            <span>·</span>
+            <Link to="/terms" className="hover:text-zinc-600 dark:hover:text-zinc-300">
+              Terms
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Quick Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Link to="/enrolled">
-          <div className="p-5 flex items-center justify-between group bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl hover:border-indigo-500/30 transition-all shadow-xs">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                  My Enrolled Pathways
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Access video lessons & code notes</p>
-              </div>
+      {/* Edit Field Modal */}
+      {activeModal && activeModal !== "resetPassword" && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
+          onClick={(e) => e.target === e.currentTarget && setActiveModal(null)}
+        >
+          <div className="bg-white dark:bg-[#121622] w-full max-w-sm rounded-3xl shadow-2xl border border-zinc-200/90 dark:border-zinc-800 p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 capitalize">
+                Edit {activeModal}
+              </h3>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">View →</span>
-          </div>
-        </Link>
 
-        <Link to="/">
-          <div className="p-5 flex items-center justify-between group bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl hover:border-purple-500/30 transition-all shadow-xs">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Compass className="w-5 h-5" />
-              </div>
+            <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                  Explore Catalog
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Discover new career pathways</p>
+                <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5 capitalize">
+                  {activeModal}
+                </label>
+                <input
+                  type={activeModal === "email" ? "email" : "text"}
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  placeholder={`Enter your ${activeModal}`}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
               </div>
-            </div>
-            <span className="text-xs font-bold text-purple-600 dark:text-purple-400">Browse →</span>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button variant="ghost" size="sm" type="button" onClick={() => setActiveModal(null)}>
+                  Cancel
+                </Button>
+                <Button variant="primary" size="sm" type="submit">
+                  Save Changes
+                </Button>
+              </div>
+            </form>
           </div>
-        </Link>
-      </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {activeModal === "resetPassword" && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
+          onClick={(e) => e.target === e.currentTarget && setActiveModal(null)}
+        >
+          <div className="bg-white dark:bg-[#121622] w-full max-w-sm rounded-3xl shadow-2xl border border-zinc-200/90 dark:border-zinc-800 p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                Reset Password
+              </h3>
+              <button
+                onClick={() => setActiveModal(null)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {resetSuccess ? (
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/30 flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <p className="text-xs font-semibold text-emerald-900 dark:text-emerald-200">
+                  Password reset link sent to {email}.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  We will send a password reset verification link to your registered email address:{" "}
+                  <strong className="text-zinc-800 dark:text-zinc-200">{email}</strong>.
+                </p>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button variant="ghost" size="sm" onClick={() => setActiveModal(null)}>
+                    Cancel
+                  </Button>
+                  <Button variant="primary" size="sm" onClick={handleTriggerReset}>
+                    Send Reset Link
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
