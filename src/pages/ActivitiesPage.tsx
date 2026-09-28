@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Calendar as CalendarIcon,
   SlidersHorizontal,
@@ -7,16 +7,20 @@ import {
   FileQuestion,
   Check,
   ChevronDown,
+  Sparkles,
 } from "lucide-react";
+import { useGetStudentActivitiesQuery } from "../store/apiSlice";
 
 interface ScheduledActivity {
   id: string;
+  lessonId?: string;
+  pathwayId?: string;
   type: "assignment" | "quiz" | "practice-quiz";
   category: string;
   course: string;
   title: string;
   dateText: string;
-  isUrgent?: boolean; // Red highlighted date text
+  isUrgent?: boolean;
   iconStyle: "rose" | "crimson" | "lime";
 }
 
@@ -25,104 +29,33 @@ interface MonthGroup {
   items: ScheduledActivity[];
 }
 
-const SCHEDULED_ACTIVITIES: MonthGroup[] = [
-  {
-    month: "October 2026",
-    items: [
-      {
-        id: "act-1",
-        type: "assignment",
-        category: "Hands-on Lab",
-        course: "Generative AI Engineering",
-        title: "Week 1 Lab: Real Dataset Profiling with Pandas",
-        dateText: "Due: 04 Oct 26 11:59 PM",
-        iconStyle: "rose",
-      },
-      {
-        id: "act-2",
-        type: "quiz",
-        category: "Graded Quiz",
-        course: "Generative AI Engineering",
-        title: "Week 1 Graded Quiz: Data & Linux Drills",
-        dateText: "02 Oct 26 12:00 AM - 05 Oct 26 11:59 PM",
-        isUrgent: true,
-        iconStyle: "crimson",
-      },
-      {
-        id: "act-3",
-        type: "assignment",
-        category: "Milestone",
-        course: "AI Entrepreneurship & Innovation",
-        title: "Weekend 1 Milestone: Problem Statement Initiation",
-        dateText: "Due: 05 Oct 26 6:00 PM",
-        iconStyle: "rose",
-      },
-    ],
-  },
-  {
-    month: "November 2026",
-    items: [
-      {
-        id: "act-4",
-        type: "assignment",
-        category: "Hands-on Lab",
-        course: "Generative AI Engineering",
-        title: "Week 3 Lab: Dockerized AI Backend Gate",
-        dateText: "Due: 18 Nov 26 11:59 PM",
-        isUrgent: true,
-        iconStyle: "crimson",
-      },
-      {
-        id: "act-5",
-        type: "assignment",
-        category: "Milestone",
-        course: "AI Entrepreneurship & Innovation",
-        title: "Weekend 6 Milestone: Functional MVP Clickable Build",
-        dateText: "Due: 15 Nov 26 6:00 PM",
-        iconStyle: "rose",
-      },
-    ],
-  },
-  {
-    month: "December 2026",
-    items: [
-      {
-        id: "act-6",
-        type: "assignment",
-        category: "Capstone",
-        course: "Generative AI Engineering",
-        title: "Week 12 Capstone: Production Agentic RAG System",
-        dateText: "Defense: 28 Dec 26 2:00 PM",
-        isUrgent: true,
-        iconStyle: "crimson",
-      },
-      {
-        id: "act-7",
-        type: "assignment",
-        category: "Capstone",
-        course: "AI Entrepreneurship & Innovation",
-        title: "Weekend 12 Milestone: Final Pitch Venture Defense",
-        dateText: "Demo Day: 27 Dec 26 4:00 PM",
-        isUrgent: true,
-        iconStyle: "crimson",
-      },
-    ],
-  },
-];
-
 export default function ActivitiesPage() {
+  const navigate = useNavigate();
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "assignment" | "quiz">("all");
-  const [selectedMonth, setSelectedMonth] = useState("November 2025");
 
-  const filteredGroups = SCHEDULED_ACTIVITIES.map((group) => {
-    const items = group.items.filter((item) => {
-      if (selectedFilter === "assignment") return item.type === "assignment";
-      if (selectedFilter === "quiz") return item.type === "quiz" || item.type === "practice-quiz";
-      return true;
-    });
-    return { ...group, items };
-  }).filter((group) => group.items.length > 0);
+  const { data: activitiesData, isLoading } = useGetStudentActivitiesQuery(undefined);
+
+  const currentMonthLabel = useMemo(() => {
+    return new Date().toLocaleString("default", { month: "long", year: "numeric" });
+  }, []);
+
+  const scheduledGroups: MonthGroup[] = useMemo(() => {
+    return activitiesData?.scheduled || [];
+  }, [activitiesData]);
+
+  const filteredGroups = useMemo(() => {
+    return scheduledGroups
+      .map((group) => {
+        const items = group.items.filter((item) => {
+          if (selectedFilter === "assignment") return item.type === "assignment";
+          if (selectedFilter === "quiz") return item.type === "quiz" || item.type === "practice-quiz";
+          return true;
+        });
+        return { ...group, items };
+      })
+      .filter((group) => group.items.length > 0);
+  }, [scheduledGroups, selectedFilter]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#F8FAFC] dark:bg-[#0B0D13] py-5 sm:py-8 transition-colors">
@@ -196,26 +129,46 @@ export default function ActivitiesPage() {
         <div className="flex items-center gap-2.5 py-1">
           <CalendarIcon className="w-4 h-4 text-zinc-700 dark:text-zinc-300 stroke-[2]" />
           <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-            {selectedMonth}
+            {filteredGroups[0]?.month || currentMonthLabel}
           </span>
         </div>
 
         {/* Grouped Month Timelines */}
         <div className="space-y-6 pt-1">
-          {filteredGroups.map((group) => (
-            <section key={group.month} className="space-y-2.5">
-              {/* Month Section Header */}
-              <h2 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                {group.month}
-              </h2>
+          {filteredGroups.length === 0 ? (
+            <div className="bg-white dark:bg-[#121622] rounded-3xl border border-slate-200/90 dark:border-zinc-800/90 p-8 text-center space-y-3">
+              <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
+                <Check className="w-6 h-6 stroke-[2]" />
+              </div>
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                You're all caught up!
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                There are no pending activities or upcoming deadlines for your enrolled courses right now.
+              </p>
+              <button
+                onClick={() => navigate("/")}
+                className="mt-2 inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-5 rounded-full shadow-xs transition-colors cursor-pointer"
+              >
+                <span>Return to Dashboard</span>
+              </button>
+            </div>
+          ) : (
+            filteredGroups.map((group) => (
+              <section key={group.month} className="space-y-2.5">
+                {/* Month Section Header */}
+                <h2 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
+                  {group.month}
+                </h2>
 
-              {/* Cards within this month */}
-              <div className="space-y-2.5">
-                {group.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-white dark:bg-[#121622] rounded-2xl border border-slate-100/90 dark:border-zinc-800/80 p-3.5 sm:p-4 shadow-2xs hover:border-slate-200 dark:hover:border-zinc-700 hover:shadow-xs transition-all flex items-center gap-3.5"
-                  >
+                {/* Cards within this month */}
+                <div className="space-y-2.5">
+                  {group.items.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => item.pathwayId && navigate(`/learn/${item.pathwayId}`)}
+                      className="bg-white dark:bg-[#121622] rounded-2xl border border-slate-100/90 dark:border-zinc-800/80 p-3.5 sm:p-4 shadow-2xs hover:border-slate-200 dark:hover:border-zinc-700 hover:shadow-xs transition-all flex items-center gap-3.5 cursor-pointer group"
+                    >
                     {/* Left Icon Badge */}
                     <div className="relative shrink-0">
                       {item.iconStyle === "rose" && (
@@ -259,7 +212,7 @@ export default function ActivitiesPage() {
                 ))}
               </div>
             </section>
-          ))}
+          )))}
         </div>
 
         {/* Footer matching screenshot */}

@@ -34,6 +34,10 @@ import {
 import {
   useGetPathwayContentQuery,
   useGetLessonContentQuery,
+  useGetStudentProgressQuery,
+  useMarkLessonProgressMutation,
+  useGetStudentSubmissionsQuery,
+  useSubmitAssignmentMutation,
 } from "../store/apiSlice";
 import Spinner from "../components/ui/Spinner";
 import Button from "../components/ui/Button";
@@ -142,24 +146,30 @@ export default function LmsPlayerPage() {
     }
   }, [modules, selectedModule]);
 
-  // Track completed lessons in localStorage
-  const storageKey = `unisole_progress_${pathwayId || "cs-genai"}`;
-  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Track student progress via backend API with local cache
+  const { data: progressData } = useGetStudentProgressQuery(pathwayId);
+  const [markLessonProgressApi] = useMarkLessonProgressMutation();
+  const { data: submissionsData } = useGetStudentSubmissionsQuery(pathwayId);
+  const [submitAssignmentApi] = useSubmitAssignmentMutation();
 
-  const markLessonComplete = (lessonId: string) => {
-    setCompletedLessonIds((prev) => {
-      if (prev.includes(lessonId)) return prev;
-      const updated = [...prev, lessonId];
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      return updated;
-    });
+  const [localCompletedIds, setLocalCompletedIds] = useState<string[]>([]);
+
+  const completedLessonIds: string[] = useMemo(() => {
+    const fromServer = progressData?.completedLessonIds || [];
+    return Array.from(new Set([...fromServer, ...localCompletedIds]));
+  }, [progressData, localCompletedIds]);
+
+  const markLessonComplete = async (lessonId: string) => {
+    setLocalCompletedIds((prev) => (prev.includes(lessonId) ? prev : [...prev, lessonId]));
+    try {
+      await markLessonProgressApi({
+        lessonId,
+        pathwayId,
+        isCompleted: true,
+      }).unwrap();
+    } catch {
+      // Fallback
+    }
   };
 
   // Tabs on Overview: "learning" | "groups" | "notes"
@@ -186,17 +196,24 @@ export default function LmsPlayerPage() {
   const [assignmentNotes, setAssignmentNotes] = useState("");
   const [assignmentSubmitted, setAssignmentSubmitted] = useState(false);
 
-  // Existing submission check
+  // Existing submission check from backend API
   useEffect(() => {
     if (selectedLesson && selectedLesson.type === "assignment") {
-      const existing = getSubmissionForLesson(selectedLesson.id);
+      const existing = (submissionsData || []).find((s: any) => s.lessonId === selectedLesson.id);
       if (existing) {
         setAssignmentSubmitted(true);
-        setAssignmentRepoUrl(existing.submissionUrl);
+        setAssignmentRepoUrl(existing.submissionUrl || "");
         setAssignmentNotes(existing.submissionText || "");
+      } else {
+        const local = getSubmissionForLesson(selectedLesson.id);
+        if (local) {
+          setAssignmentSubmitted(true);
+          setAssignmentRepoUrl(local.submissionUrl);
+          setAssignmentNotes(local.submissionText || "");
+        }
       }
     }
-  }, [selectedLesson]);
+  }, [selectedLesson, submissionsData]);
 
   // Notes state
   const [userNotes, setUserNotes] = useState("");
@@ -250,7 +267,7 @@ export default function LmsPlayerPage() {
   const completedVideos = allLessonItems.filter((l) => l.type === "video" && completedLessonIds.includes(l.id)).length;
 
   // Handle Quiz Submission
-  const handleQuizSubmit = (e: React.FormEvent) => {
+  const handleQuizSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLesson.questions || selectedLesson.questions.length === 0) return;
 
@@ -264,13 +281,41 @@ export default function LmsPlayerPage() {
     const percent = Math.round((correct / selectedLesson.questions.length) * 100);
     setQuizScore(percent);
     setQuizSubmitted(true);
+
+    try {
+      await submitAssignmentApi({
+        lessonId: selectedLesson.id,
+        pathwayId,
+        type: "quiz",
+        title: selectedLesson.title,
+        score: percent,
+        status: percent >= 60 ? "APPROVED" : "COMPLETED",
+      }).unwrap();
+    } catch {
+      // Fallback
+    }
+
     markLessonComplete(selectedLesson.id);
   };
 
   // Handle Assignment Submission
-  const handleAssignmentSubmit = (e: React.FormEvent) => {
+  const handleAssignmentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignmentRepoUrl.trim()) return;
+
+    try {
+      await submitAssignmentApi({
+        lessonId: selectedLesson.id,
+        pathwayId,
+        type: "assignment",
+        title: selectedLesson.title,
+        submissionUrl: assignmentRepoUrl.trim(),
+        submissionText: assignmentNotes.trim(),
+        status: "SUBMITTED",
+      }).unwrap();
+    } catch {
+      // Fallback
+    }
 
     saveSubmission({
       assignmentId: selectedLesson.id,
@@ -352,7 +397,7 @@ export default function LmsPlayerPage() {
                   {courseTitle}
                 </h1>
                 <p className="text-xs text-teal-100/90 mt-1 font-medium">
-                  {completedVideos} / {totalVideos} Videos · {completedAssessments} / {totalAssessments} Assessments · 0 / 48 Resources
+                  {completedVideos} / {totalVideos} Videos · {completedAssessments} / {totalAssessments} Assessments · {completedCount} / {totalLessons} Completed
                 </p>
               </div>
 

@@ -43,14 +43,9 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
   });
 
   const enrolledCourses = useMemo(() => {
-    const list = myPathways
+    return myPathways
       .map((item: any) => item.pathway || item)
       .filter((p: any) => p && (p.title || p.name));
-    if (list.length > 0) return list;
-    return [
-      { id: "cs-genai", title: "Generative AI Engineering" },
-      { id: "cs-common", title: "AI Entrepreneurship & Innovation" },
-    ];
   }, [myPathways]);
 
   useEffect(() => {
@@ -59,7 +54,7 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
     }
   }, [enrolledCourses, selectedCohort]);
 
-  const activeCohortTitle = selectedCohort || (enrolledCourses[0]?.title || enrolledCourses[0]?.name) || "Generative AI Engineering";
+  const activeCohortTitle = selectedCohort || (enrolledCourses[0]?.title || enrolledCourses[0]?.name) || "Select Curriculum";
 
   // Lock body scroll when drawer is open
   useEffect(() => {

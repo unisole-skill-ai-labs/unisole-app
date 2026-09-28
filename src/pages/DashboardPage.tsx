@@ -12,52 +12,7 @@ import {
   LayoutGrid,
   Check,
 } from "lucide-react";
-import { useGetMyPathwaysQuery } from "../store/apiSlice";
-import { getSubmissions } from "../utils/submissionsStorage";
-
-// Curriculum completed learning activities matching Great Learning reference
-const DEFAULT_COMPLETED_ACTIVITIES = [
-  {
-    id: "comp-1",
-    type: "assignment" as const,
-    category: "Hands-on Lab",
-    course: "Generative AI Engineering",
-    title: "Week 1 Lab: Real Dataset Profiling with Pandas",
-    datePrefix: "Submitted",
-    date: "28 Sep 26 5:30 PM",
-    statusText: "Evaluation Pending",
-  },
-  {
-    id: "comp-2",
-    type: "quiz" as const,
-    category: "Graded Quiz",
-    course: "Generative AI Engineering",
-    title: "Week 1 Graded Quiz: Data & Linux Drills",
-    datePrefix: "Completed",
-    date: "28 Sep 26 4:15 PM",
-    statusText: "Marks: 10/10",
-  },
-  {
-    id: "comp-3",
-    type: "assignment" as const,
-    category: "Milestone",
-    course: "AI Entrepreneurship & Innovation",
-    title: "Weekend 1 Milestone: Problem Statement Brief",
-    datePrefix: "Submitted",
-    date: "27 Sep 26 6:00 PM",
-    statusText: "Evaluation Complete",
-  },
-  {
-    id: "comp-4",
-    type: "quiz" as const,
-    category: "Graded Quiz",
-    course: "AI Entrepreneurship & Innovation",
-    title: "Weekend 1 Graded Quiz: Design Thinking Foundations",
-    datePrefix: "Completed",
-    date: "27 Sep 26 2:30 PM",
-    statusText: "Marks: 10/10",
-  },
-];
+import { useGetMyPathwaysQuery, useGetStudentActivitiesQuery } from "../store/apiSlice";
 
 export default function DashboardPage() {
   const { isAuthenticated, user } = useSelector((state: any) => state.auth);
@@ -74,58 +29,46 @@ export default function DashboardPage() {
     skip: !isAuthenticated,
   });
 
+  const { data: activitiesData, isLoading: isActivitiesLoading } = useGetStudentActivitiesQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+
   const enrolledCourses = useMemo(() => {
     return myPathways
       .map((item: any) => item.pathway || item)
       .filter((p: any) => p && (p.title || p.name));
   }, [myPathways]);
 
-  // Submissions for the student
-  const submissions = useMemo(() => {
-    return getSubmissions();
-  }, []);
-
-  const completedSubmissions = useMemo(() => {
-    return submissions.filter((s) => s.status === "APPROVED");
-  }, [submissions]);
-
-  // Top active course banner matching curriculum
+  // Top active course banner matching student's enrolled pathway
   const topCourse = useMemo(() => {
     const primary = enrolledCourses[0];
-    const title = primary?.title || primary?.name || "Generative AI Engineering";
-    const courseId = primary?.id || "cs-genai";
+    if (!primary) {
+      return {
+        id: "",
+        title: "Explore Learning Pathways",
+        subtitle: "Enroll in a curriculum to start your hands-on journey",
+        path: "/catalog",
+      };
+    }
+    const title = primary.title || primary.name;
+    const courseId = primary.id || primary.slug;
     return {
       id: courseId,
       title: title,
-      subtitle: courseId.includes("common") || courseId.includes("entrepreneur")
-        ? "Weekend 1: Design Thinking & Empathy Mapping · 25 Mins Left"
-        : "Week 1: Data Engineering for AI · 14 Mins Left",
+      subtitle: `${primary.shortDescription || "Continue your next structured learning milestone"} · In Progress`,
       path: `/learn/${courseId}`,
     };
   }, [enrolledCourses]);
 
-  // Combined completed activities list (real approved submissions + verified curriculum quiz & assignments)
+  // Dynamic completed and scheduled activities from backend
   const completedList = useMemo(() => {
-    const userCompleted = completedSubmissions.map((sub) => ({
-      id: sub.id,
-      type: "assignment" as const,
-      category: "Assignment",
-      course: sub.courseTitle || (enrolledCourses[0]?.title || "Applied Machine Learning"),
-      title: sub.lessonTitle || "Project Assignment",
-      datePrefix: "Due",
-      date: new Date(sub.createdAt).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "2-digit",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      }),
-      statusText: sub.mentorFeedback ? "Evaluation Complete" : "Evaluation Pending",
-    }));
+    return activitiesData?.completed || [];
+  }, [activitiesData]);
 
-    return [...userCompleted, ...DEFAULT_COMPLETED_ACTIVITIES];
-  }, [completedSubmissions, enrolledCourses]);
+  const activeList = useMemo(() => {
+    const scheduledGroups = activitiesData?.scheduled || [];
+    return scheduledGroups.flatMap((g: any) => g.items || []);
+  }, [activitiesData]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50/70 dark:bg-[#0B0D13] py-4 sm:py-8 transition-colors">
@@ -191,39 +134,91 @@ export default function DashboardPage() {
 
           {/* Tab Content */}
           {activeTab === "completed" ? (
-            <div className="space-y-3">
-              {completedList.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white dark:bg-[#121622] rounded-2xl border border-slate-100/90 dark:border-zinc-800/80 p-3.5 sm:p-4 shadow-2xs hover:border-slate-200 dark:hover:border-zinc-700 hover:shadow-xs transition-all flex items-center gap-3.5"
-                >
-                  {/* Left Icon with Green Checkmark Badge */}
-                  <div className="relative shrink-0">
-                    {item.type === "assignment" ? (
-                      <div className="w-11 h-11 rounded-xl bg-rose-100/80 dark:bg-rose-950/50 border border-rose-200/60 dark:border-rose-900/30 flex items-center justify-center text-rose-500 dark:text-rose-400 shadow-2xs">
-                        <FileText className="w-5 h-5 stroke-[1.8]" />
+            completedList.length === 0 ? (
+              <div className="bg-white dark:bg-[#121622] rounded-3xl border border-slate-200/90 dark:border-zinc-800/90 p-8 text-center space-y-3">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-6 h-6 stroke-[1.8]" />
+                </div>
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                  No completed learning activities yet
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                  Complete video lectures, quizzes, or hands-on assignments to track your progress and marks here.
+                </p>
+                {topCourse.id && (
+                  <button
+                    onClick={() => navigate(topCourse.path)}
+                    className="mt-2 inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-5 rounded-full shadow-xs transition-colors cursor-pointer"
+                  >
+                    <span>Start Learning</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {completedList.map((item: any) => (
+                  <div
+                    key={item.id}
+                    onClick={() => item.pathwayId && navigate(`/learn/${item.pathwayId}`)}
+                    className="bg-white dark:bg-[#121622] rounded-2xl border border-slate-100/90 dark:border-zinc-800/80 p-3.5 sm:p-4 shadow-2xs hover:border-slate-200 dark:hover:border-zinc-700 hover:shadow-xs transition-all flex items-center gap-3.5 cursor-pointer group"
+                  >
+                    {/* Left Icon with Green Checkmark Badge */}
+                    <div className="relative shrink-0">
+                      {item.type === "assignment" ? (
+                        <div className="w-11 h-11 rounded-xl bg-rose-100/80 dark:bg-rose-950/50 border border-rose-200/60 dark:border-rose-900/30 flex items-center justify-center text-rose-500 dark:text-rose-400 shadow-2xs">
+                          <FileText className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                      ) : (
+                        <div className="w-11 h-11 rounded-xl bg-[#DCF8C6]/80 dark:bg-lime-950/50 border border-lime-200/70 dark:border-lime-900/30 flex items-center justify-center text-lime-800 dark:text-lime-400 shadow-2xs">
+                          <FileQuestion className="w-5 h-5 stroke-[1.8]" />
+                        </div>
+                      )}
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center border-2 border-white dark:border-[#121622] shadow-xs">
+                        <Check className="w-2.5 h-2.5 stroke-[3]" />
                       </div>
-                    ) : (
-                      <div className="w-11 h-11 rounded-xl bg-[#DCF8C6]/80 dark:bg-lime-950/50 border border-lime-200/70 dark:border-lime-900/30 flex items-center justify-center text-lime-800 dark:text-lime-400 shadow-2xs">
-                        <FileQuestion className="w-5 h-5 stroke-[1.8]" />
+                    </div>
+
+                    {/* Activity Metadata Column */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] sm:text-xs font-semibold text-blue-600 dark:text-blue-400 truncate">
+                        {item.category} · {item.course}
                       </div>
-                    )}
-                    {/* Small Green Circle with White Checkmark at Bottom Right */}
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center border-2 border-white dark:border-[#121622] shadow-xs">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                      <h4 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate mt-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {item.title}
+                      </h4>
+                      <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5 font-medium">
+                        {item.datePrefix}: {item.date} · {item.statusText}
+                      </div>
                     </div>
                   </div>
-
-                  {/* Activity Metadata Column */}
+                ))}
+              </div>
+            )
+          ) : activeList.length > 0 ? (
+            <div className="space-y-3">
+              {activeList.slice(0, 5).map((item: any) => (
+                <div
+                  key={item.id}
+                  onClick={() => item.pathwayId && navigate(`/learn/${item.pathwayId}`)}
+                  className="bg-white dark:bg-[#121622] rounded-2xl border border-slate-100/90 dark:border-zinc-800/80 p-3.5 sm:p-4 shadow-2xs hover:border-slate-200 dark:hover:border-zinc-700 hover:shadow-xs transition-all flex items-center gap-3.5 cursor-pointer group"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 shadow-2xs">
+                    {item.type === "quiz" ? (
+                      <FileQuestion className="w-5 h-5 stroke-[1.8]" />
+                    ) : (
+                      <FileText className="w-5 h-5 stroke-[1.8]" />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[11px] sm:text-xs font-semibold text-blue-600 dark:text-blue-400 truncate">
+                    <div className="text-[11px] sm:text-xs font-semibold text-amber-600 dark:text-amber-400 truncate">
                       {item.category} · {item.course}
                     </div>
-                    <h4 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate mt-0.5">
+                    <h4 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate mt-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {item.title}
                     </h4>
                     <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5 font-medium">
-                      {item.datePrefix}: {item.date} · {item.statusText}
+                      {item.dateText}
                     </div>
                   </div>
                 </div>

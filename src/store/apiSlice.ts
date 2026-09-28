@@ -72,6 +72,9 @@ export const apiSlice = createApi({
     "AdminModules",
     "AdminLessons",
     "AdminStudents",
+    "Progress",
+    "Submissions",
+    "Activities",
   ],
   endpoints: (builder) => ({
     // ─── Auth Endpoints ──────────────────────────────────────────────────────────
@@ -187,6 +190,36 @@ export const apiSlice = createApi({
     getMyEnrollments: builder.query({
       query: () => "/api/lms/enrollments",
       providesTags: [{ type: "Enrollment", id: "LIST" }],
+    }),
+
+    // ─── Student Progress, Submissions & Activities ──────────────────────────────
+    getStudentProgress: builder.query({
+      query: (pathwayId) => (pathwayId ? `/api/lms/progress/${pathwayId}` : "/api/lms/progress"),
+      providesTags: ["Progress"],
+    }),
+    markLessonProgress: builder.mutation({
+      query: (body) => ({
+        url: "/api/lms/progress",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Progress", "Activities"],
+    }),
+    getStudentSubmissions: builder.query({
+      query: (pathwayId) => (pathwayId ? `/api/lms/submissions/${pathwayId}` : "/api/lms/submissions"),
+      providesTags: ["Submissions"],
+    }),
+    submitAssignment: builder.mutation({
+      query: (body) => ({
+        url: "/api/lms/submissions",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Submissions", "Progress", "Activities"],
+    }),
+    getStudentActivities: builder.query({
+      query: () => "/api/lms/activities",
+      providesTags: ["Activities"],
     }),
 
     // ─── Payments & Commerce Endpoints ───────────────────────────────────────────
@@ -386,4 +419,11 @@ export const {
   useUpdateAdminLessonMutation,
   useGetAdminStudentsQuery,
   useGetAdminEnrollmentsQuery,
+
+  // Student LMS Progress & Submissions hooks
+  useGetStudentProgressQuery,
+  useMarkLessonProgressMutation,
+  useGetStudentSubmissionsQuery,
+  useSubmitAssignmentMutation,
+  useGetStudentActivitiesQuery,
 } = apiSlice;
