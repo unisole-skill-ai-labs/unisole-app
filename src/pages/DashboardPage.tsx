@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -8,15 +8,24 @@ import {
   ArrowRight,
   BookOpen,
   Layers,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { useGetMyPathwaysQuery } from "../store/apiSlice";
 import { getSubmissions } from "../utils/submissionsStorage";
+
+const COURSE_STORAGE_KEY = "unisole_selected_course";
 
 export default function DashboardPage() {
   const { isAuthenticated, user } = useSelector((state: any) => state.auth);
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
+  const [courseDropdownOpen, setCourseDropdownOpen] = useState(false);
+  const [selectedCohort, setSelectedCohort] = useState<string>(() => {
+    return localStorage.getItem(COURSE_STORAGE_KEY) || "";
+  });
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { data: myPathways = [] } = useGetMyPathwaysQuery(undefined, {
     skip: !isAuthenticated,
@@ -28,6 +37,78 @@ export default function DashboardPage() {
       .filter((p: any) => p && (p.title || p.name));
   }, [myPathways]);
 
+  useEffect(() => {
+    if (enrolledCourses.length > 0) {
+      const exists = enrolledCourses.some((c: any) => (c.title || c.name) === selectedCohort);
+      if (!selectedCohort || !exists) {
+        const initial = enrolledCourses[0].title || enrolledCourses[0].name;
+        setSelectedCohort(initial);
+        localStorage.setItem(COURSE_STORAGE_KEY, initial);
+      }
+    }
+  }, [enrolledCourses, selectedCohort]);
+
+  // Sync with drawer and external events
+  useEffect(() => {
+    const handleCourseChange = (e: any) => {
+      if (e.detail) {
+        setSelectedCohort(e.detail);
+      }
+    };
+    window.addEventListener("unisole:course-change", handleCourseChange as any);
+    return () => {
+      window.removeEventListener("unisole:course-change", handleCourseChange as any);
+    };
+  }, []);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setCourseDropdownOpen(false);
+      }
+    };
+    if (courseDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [courseDropdownOpen]);
+
+  // Handle ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setCourseDropdownOpen(false);
+      }
+    };
+    if (courseDropdownOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [courseDropdownOpen]);
+
+  const activeCourse = useMemo(() => {
+    if (!enrolledCourses.length) return null;
+    return (
+      enrolledCourses.find((c: any) => (c.title || c.name) === selectedCohort) ||
+      enrolledCourses[0]
+    );
+  }, [enrolledCourses, selectedCohort]);
+
+  const activeCourseTitle =
+    activeCourse?.title || activeCourse?.name || selectedCohort || "Generative AI Engineering";
+
+  const handleSelectCourse = (title: string) => {
+    setSelectedCohort(title);
+    setCourseDropdownOpen(false);
+    localStorage.setItem(COURSE_STORAGE_KEY, title);
+    window.dispatchEvent(new CustomEvent("unisole:course-change", { detail: title }));
+  };
+
   // Submissions for the student
   const submissions = useMemo(() => {
     return getSubmissions();
@@ -37,9 +118,11 @@ export default function DashboardPage() {
     return submissions.filter((s) => s.status === "APPROVED");
   }, [submissions]);
 
-  // Determine continue learning items (only actual enrolled courses)
+  // Determine continue learning items (prioritizing the active selected course)
   const continueLearningItems = useMemo(() => {
-    return enrolledCourses.map((p: any, idx: number) => {
+    if (enrolledCourses.length === 0) return [];
+    const targetCourses = activeCourse ? [activeCourse] : enrolledCourses;
+    return targetCourses.map((p: any, idx: number) => {
       const isOdd = idx % 2 === 1;
       return {
         id: p.id,
@@ -51,11 +134,112 @@ export default function DashboardPage() {
         path: `/learn/${p.id}`,
       };
     });
-  }, [enrolledCourses]);
+  }, [activeCourse, enrolledCourses]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50/70 dark:bg-[#0B0D13] py-4 sm:py-6 transition-colors">
       <div className="max-w-2xl mx-auto px-4 space-y-5">
+        {/* Active Course Switcher Card on Top */}
+        <div ref={dropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setCourseDropdownOpen((prev) => !prev)}
+            className="w-full flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-[#121622] hover:bg-slate-50/80 dark:hover:bg-zinc-800/50 border border-slate-200/90 dark:border-zinc-800/90 shadow-2xs hover:border-indigo-300 dark:hover:border-indigo-600/70 transition-all text-left cursor-pointer group"
+          >
+            <div className="flex items-center gap-3.5 min-w-0 pr-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/40 flex items-center justify-center shrink-0 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
+                <BookOpen className="w-5 h-5 stroke-[2]" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm sm:text-base font-extrabold text-zinc-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                    {activeCourseTitle}
+                  </span>
+                  {enrolledCourses.length > 1 && (
+                    <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/40">
+                      Switch
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 truncate">
+                  {enrolledCourses.length > 0
+                    ? `${enrolledCourses.length} Enrolled ${enrolledCourses.length === 1 ? "Course" : "Courses"}`
+                    : "Curated Learning Track"}
+                </span>
+              </div>
+            </div>
+
+            <ChevronDown
+              className={`w-5 h-5 text-zinc-400 shrink-0 transition-transform duration-200 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 ${
+                courseDropdownOpen ? "rotate-180 text-indigo-600 dark:text-indigo-400" : ""
+              }`}
+            />
+          </button>
+
+          {/* Course Selector Dropdown Menu */}
+          {courseDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 mt-2 p-2 bg-white dark:bg-[#121622] rounded-2xl shadow-xl border border-slate-200 dark:border-zinc-800 z-30 animate-fade-in space-y-1">
+              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                Enrolled Courses ({enrolledCourses.length})
+              </div>
+              {enrolledCourses.length === 0 ? (
+                <div className="p-4 text-center space-y-2">
+                  <p className="text-xs text-zinc-500">No enrolled courses yet</p>
+                  <Link
+                    to="/catalog"
+                    onClick={() => setCourseDropdownOpen(false)}
+                    className="inline-block text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    Browse Pathways Catalog →
+                  </Link>
+                </div>
+              ) : (
+                <div className="max-h-60 overflow-y-auto space-y-1">
+                  {enrolledCourses.map((c: any) => {
+                    const title = c.title || c.name;
+                    const isSelected = activeCourseTitle === title;
+                    return (
+                      <button
+                        key={c.id || title}
+                        type="button"
+                        onClick={() => handleSelectCourse(title)}
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium text-left transition-colors cursor-pointer ${
+                          isSelected
+                            ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold"
+                            : "text-zinc-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800/60"
+                        }`}
+                      >
+                        <span className="truncate">{title}</span>
+                        {isSelected && (
+                          <Check className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 ml-2" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {enrolledCourses.length > 0 && (
+                <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 px-2 flex items-center justify-between">
+                  <Link
+                    to="/enrolled"
+                    onClick={() => setCourseDropdownOpen(false)}
+                    className="text-[11px] font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+                  >
+                    Manage all courses
+                  </Link>
+                  <Link
+                    to="/catalog"
+                    onClick={() => setCourseDropdownOpen(false)}
+                    className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    Explore Catalog →
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Continue Learning Section */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
