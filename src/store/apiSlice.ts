@@ -320,6 +320,18 @@ export const apiSlice = createApi({
         { type: "AdminModules", id: `${courseId}-modules` },
       ],
     }),
+    clearAdminCourseModules: builder.mutation({
+      query: (courseId) => ({
+        url: `/api/admin/courses/${courseId}/modules`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_res, _err, courseId) => [
+        "AdminCourses",
+        "AdminModules",
+        "AdminLessons",
+        { type: "AdminModules", id: `${courseId}-modules` },
+      ],
+    }),
 
     // Modules
     getAdminModules: builder.query({
@@ -476,6 +488,7 @@ export const {
   useGetAdminCourseModulesQuery,
   useAttachAdminCourseModuleMutation,
   useDetachAdminCourseModuleMutation,
+  useClearAdminCourseModulesMutation,
   useGetAdminModulesQuery,
   useCreateAdminModuleMutation,
   useUpdateAdminModuleMutation,

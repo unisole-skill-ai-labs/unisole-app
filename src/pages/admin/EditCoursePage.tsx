@@ -41,6 +41,7 @@ import {
   useCreateAdminLessonMutation,
   useGetAdminLessonByIdQuery,
   useUpdateAdminLessonMutation,
+  useClearAdminCourseModulesMutation,
 } from "../../store/apiSlice";
 import { useAutosave } from "../../utils/useAutosave";
 import { LessonType, ContentStatus, QuizQuestion } from "../../types";
@@ -65,6 +66,7 @@ export default function EditCoursePage() {
   const [createLesson] = useCreateAdminLessonMutation();
   const [attachLesson] = useAttachAdminModuleLessonMutation();
   const [updateLessonMutation] = useUpdateAdminLessonMutation();
+  const [clearCourseModulesMutation] = useClearAdminCourseModulesMutation();
 
   // Selected State
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
@@ -396,6 +398,24 @@ export default function EditCoursePage() {
     }
   };
 
+  // Clear all chapters from this course
+  const handleClearAllChapters = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to remove all chapters and lessons from this course? You can manually add new ones."
+      )
+    ) {
+      return;
+    }
+    try {
+      await clearCourseModulesMutation(courseId).unwrap();
+      setActiveLessonId(null);
+      refetchModules();
+    } catch (err) {
+      console.error("Failed to clear chapters:", err);
+    }
+  };
+
   // Create & attach a new Lesson
   const handleAddLesson = async (moduleId: string) => {
     if (!newLessonTitle.trim()) return;
@@ -588,13 +608,27 @@ export default function EditCoursePage() {
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Chapters & Lessons
             </span>
-            <button
-              onClick={() => setShowAddChapter(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-lg transition-colors cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Add Chapter</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              {courseModules.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllChapters}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                  title="Remove all existing / dummy chapters"
+                >
+                  <Trash2 className="w-3 h-3 stroke-[2]" />
+                  <span>Clear All</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowAddChapter(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-lg transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Add Chapter</span>
+              </button>
+            </div>
           </div>
 
           {/* Inline Add Chapter Form */}
