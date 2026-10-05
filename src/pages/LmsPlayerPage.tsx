@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   ArrowRight,
@@ -54,8 +53,6 @@ import {
   useGradeSubmissionMutation,
 } from "../store/apiSlice";
 import MilestonesModal from "../components/lms/MilestonesModal";
-import MentorCockpitView from "../components/lms/MentorCockpitView";
-import AuthorStudioDrawer from "../components/lms/AuthorStudioDrawer";
 import CodingTestRunner from "../components/lms/CodingTestRunner";
 import SubjectiveVideoTestRunner from "../components/lms/SubjectiveVideoTestRunner";
 import Spinner from "../components/ui/Spinner";
@@ -76,10 +73,6 @@ import {
 export default function LmsPlayerPage() {
   const { pathwayId } = useParams();
   const navigate = useNavigate();
-
-  const { user } = useSelector((state: any) => state.auth || {});
-  const userRole = user?.role ? String(user.role).toUpperCase() : "";
-  const canManageCourse = ["ADMIN", "SUPER_ADMIN", "PROGRAM_MANAGER", "MENTOR", "MEMBER"].includes(userRole);
 
   // Active canonical curriculum fallback
   const canonical = useMemo(() => getCurriculum(pathwayId), [pathwayId]);
@@ -152,51 +145,10 @@ export default function LmsPlayerPage() {
     return canonical.modules;
   }, [courses, canonical]);
 
-  // Milestones, Author Studio & Mentorship States
+  // Milestones & Mentorship State
   const [isMilestonesOpen, setIsMilestonesOpen] = useState(false);
-  const [isAuthorStudioOpen, setIsAuthorStudioOpen] = useState(false);
-  const [isAuthorMode, setIsAuthorMode] = useState(false);
-  const [mentorMode, setMentorMode] = useState<"student" | "mentor">("student");
-  const [customItems, setCustomItems] = useState<any[]>([]);
-
   const { data: studentMentor } = useGetStudentMentorQuery(undefined);
-  const { data: mentorCockpitData } = useGetMentorCockpitQuery(undefined);
-  const [createCourseAssignmentApi] = useCreateCourseAssignmentMutation();
   const [submitAssessmentTaskApi] = useSubmitAssessmentTaskMutation();
-  const [gradeSubmissionApi] = useGradeSubmissionMutation();
-
-  const handleSaveAuthorContent = async (item: any) => {
-    setCustomItems((prev) => [...prev, item]);
-    try {
-      await createCourseAssignmentApi({
-        moduleId: item.moduleId,
-        title: item.title,
-        description: item.description,
-        category: item.category,
-        type: item.type,
-        maxScore: item.maxScore,
-        config: item.config,
-      }).unwrap();
-    } catch {
-      // Non-critical fallback
-    }
-  };
-
-  const handleGradeSubmission = async (
-    menteeId: string,
-    submissionId: string,
-    score: number,
-    feedback: string
-  ) => {
-    try {
-      await gradeSubmissionApi({
-        id: submissionId,
-        body: { score, mentorFeedback: feedback },
-      }).unwrap();
-    } catch {
-      // Non-critical fallback
-    }
-  };
 
   // View state: "overview" (SS1) | "chapter" (SS2) | "player" (SS3)
   const [currentView, setCurrentView] = useState<"overview" | "chapter" | "player">("overview");
@@ -501,13 +453,6 @@ export default function LmsPlayerPage() {
                 </button>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setIsAuthorStudioOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 text-xs font-bold transition-all cursor-pointer"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span>Author Studio</span>
-                  </button>
-                  <button
                     onClick={() => navigate("/catalog")}
                     aria-label="Search"
                     className="p-1 text-white/90 hover:text-white transition-colors cursor-pointer"
@@ -635,20 +580,6 @@ export default function LmsPlayerPage() {
                   )}
                 </button>
               </div>
-
-              {canManageCourse && overviewTab === "learning" && (
-                <button
-                  onClick={() => setIsAuthorMode(!isAuthorMode)}
-                  className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                    isAuthorMode
-                      ? "bg-sky-500/20 border-sky-400 text-sky-300"
-                      : "border-slate-300 dark:border-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{isAuthorMode ? "Exit Studio" : "+ Author Studio"}</span>
-                </button>
-              )}
             </div>
           </div>
 
@@ -656,18 +587,6 @@ export default function LmsPlayerPage() {
           <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-6">
             {overviewTab === "learning" && (
               <div className="space-y-3.5">
-                {canManageCourse && isAuthorMode && (
-                  <div className="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-between text-xs text-sky-300 font-semibold mb-3">
-                    <span>Course Manager Studio Active: Add lectures, practice quizzes, or evaluation tests.</span>
-                    <button
-                      onClick={() => setIsAuthorStudioOpen(true)}
-                      className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-white rounded-xl font-bold transition-colors cursor-pointer"
-                    >
-                      + Create Content
-                    </button>
-                  </div>
-                )}
-
                 {modules.map((mod, idx) => {
                   const modItems = mod.items || [];
                   const modCompletedCount = modItems.filter((i) => completedLessonIds.includes(i.id)).length;
@@ -704,91 +623,35 @@ export default function LmsPlayerPage() {
 
             {overviewTab === "groups" && (
               <div className="space-y-5 animate-fade-in">
-                {/* View Switcher: Learner View vs Mentor Cockpit View */}
-                <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-slate-200 dark:border-slate-800">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {canManageCourse && mentorMode === "mentor"
-                        ? "Mentor Operations Cockpit"
-                        : "Cohort Mentorship Hub"}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {canManageCourse && mentorMode === "mentor"
-                        ? "Review mentee submissions, track milestone diamonds, and grade code."
-                        : "Connect with your assigned mentor and collaborate with batch peers."}
-                    </p>
+                {/* Program Mentor Card */}
+                <div className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                      Assigned Program Mentor
+                    </span>
+                    <span className="text-[11px] font-bold text-sky-500 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
+                      {studentMentor?.officeHours || "Tue & Thu 6:00 - 7:30 PM IST"}
+                    </span>
                   </div>
 
-                  {canManageCourse && (
-                    <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
-                      <button
-                        onClick={() => setMentorMode("student")}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                          mentorMode === "student"
-                            ? "bg-white dark:bg-slate-800 text-sky-500 shadow-sm"
-                            : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                        }`}
-                      >
-                        Learner View
-                      </button>
-                      <button
-                        onClick={() => setMentorMode("mentor")}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                          mentorMode === "mentor"
-                            ? "bg-white dark:bg-slate-800 text-sky-500 shadow-sm"
-                            : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                        }`}
-                      >
-                        Mentor View
-                      </button>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <img
+                      src={studentMentor?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"}
+                      alt={studentMentor?.name || "Mentor"}
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-sky-500/40 shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h5 className="text-base font-bold text-slate-900 dark:text-white truncate">
+                        {studentMentor?.name || "Dr. Vikram Sethi"}
+                      </h5>
+                      <p className="text-xs text-sky-500 dark:text-sky-400 font-semibold truncate mt-0.5">
+                        {studentMentor?.specialization || "Principal AI Scientist & GenAI Systems"}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                        {studentMentor?.bio || "Guiding your weekly architecture huddles, capstone milestones, and production evaluations."}
+                      </p>
                     </div>
-                  )}
-                </div>
-
-                {canManageCourse && mentorMode === "mentor" ? (
-                  <MentorCockpitView
-                    mentees={mentorCockpitData?.mentees || []}
-                    milestones={
-                      mentorCockpitData?.milestones || {
-                        submitted: 7,
-                        evaluated: 6,
-                        pendingReview: 4,
-                        atRisk: 5,
-                      }
-                    }
-                    onGradeSubmission={handleGradeSubmission}
-                  />
-                ) : (
-                  <>
-                    {/* Program Mentor Card */}
-                    <div className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xs space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
-                          Assigned Program Mentor
-                        </span>
-                        <span className="text-[11px] font-bold text-sky-500 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
-                          {studentMentor?.officeHours || "Tue & Thu 6:00 - 7:30 PM IST"}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                        <img
-                          src={studentMentor?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"}
-                          alt={studentMentor?.name || "Mentor"}
-                          className="w-16 h-16 rounded-2xl object-cover border-2 border-sky-500/40 shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <h5 className="text-base font-bold text-slate-900 dark:text-white truncate">
-                            {studentMentor?.name || "Dr. Vikram Sethi"}
-                          </h5>
-                          <p className="text-xs text-sky-500 dark:text-sky-400 font-semibold truncate mt-0.5">
-                            {studentMentor?.specialization || "Principal AI Scientist & GenAI Systems"}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                            {studentMentor?.bio || "Guiding your weekly architecture huddles, capstone milestones, and production evaluations."}
-                          </p>
-                        </div>
-                      </div>
+                  </div>
 
                       <div className="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                         <button
@@ -837,9 +700,7 @@ export default function LmsPlayerPage() {
                         ))}
                       </div>
                     </div>
-                  </>
-                )}
-              </div>
+                </div>
             )}
 
             {overviewTab === "notes" && (
@@ -931,13 +792,6 @@ export default function LmsPlayerPage() {
             setSelectedLesson(les);
             setCurrentView("player");
           }}
-        />
-
-        <AuthorStudioDrawer
-          isOpen={isAuthorStudioOpen}
-          onClose={() => setIsAuthorStudioOpen(false)}
-          modules={modules.map((m) => ({ id: m.id, title: m.title }))}
-          onSaveContent={handleSaveAuthorContent}
         />
       </div>
     );

@@ -11,16 +11,41 @@ import {
   User,
   Clock,
   X,
+  Award,
+  Layers,
 } from "lucide-react";
 import { StudentSubmission } from "../../types";
 import { getSubmissions, updateSubmissionReview } from "../../utils/submissionsStorage";
+import { useGetMentorCockpitQuery, useGradeSubmissionMutation } from "../../store/apiSlice";
+import MentorCockpitView from "../../components/lms/MentorCockpitView";
 
 export default function SubmissionsPage() {
   const { user } = useSelector((state: any) => state.auth);
+  const [activeTab, setActiveTab] = useState<"cockpit" | "table">("cockpit");
   const [filter, setFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "CHANGES_REQUESTED">(
     "ALL"
   );
   const [search, setSearch] = useState("");
+
+  const { data: mentorCockpitData, refetch: refetchCockpit } = useGetMentorCockpitQuery(undefined);
+  const [gradeSubmissionApi] = useGradeSubmissionMutation();
+
+  const handleGradeSubmission = async (
+    menteeId: string,
+    submissionId: string,
+    score: number,
+    feedback: string
+  ) => {
+    try {
+      await gradeSubmissionApi({
+        id: submissionId,
+        body: { score, mentorFeedback: feedback },
+      }).unwrap();
+      refetchCockpit();
+    } catch {
+      // Non-critical fallback
+    }
+  };
 
   const [submissions, setSubmissions] = useState<StudentSubmission[]>(() => getSubmissions());
 
@@ -58,15 +83,57 @@ export default function SubmissionsPage() {
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6 animate-fade-in">
-      {/* Top Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-          Submissions
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Review student assignment submissions, verify URLs, and provide mentor feedback.
-        </p>
+      {/* Top Header & Tab Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-zinc-200 dark:border-zinc-800">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-2.5">
+            <Award className="w-6 h-6 text-sky-500" />
+            <span>Mentorship Cockpit & Evaluations</span>
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            Track student milestones, evaluate coding deliverables, and grade assessment vivas.
+          </p>
+        </div>
+
+        <div className="flex items-center p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 self-start">
+          <button
+            onClick={() => setActiveTab("cockpit")}
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === "cockpit"
+                ? "bg-white dark:bg-zinc-800 text-sky-500 shadow-sm"
+                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            }`}
+          >
+            Mentorship Cockpit
+          </button>
+          <button
+            onClick={() => setActiveTab("table")}
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === "table"
+                ? "bg-white dark:bg-zinc-800 text-sky-500 shadow-sm"
+                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            }`}
+          >
+            Submissions Audit ({submissions.length})
+          </button>
+        </div>
       </div>
+
+      {activeTab === "cockpit" ? (
+        <MentorCockpitView
+          mentees={mentorCockpitData?.mentees || []}
+          milestones={
+            mentorCockpitData?.milestones || {
+              submitted: 7,
+              evaluated: 6,
+              pendingReview: 4,
+              atRisk: 5,
+            }
+          }
+          onGradeSubmission={handleGradeSubmission}
+        />
+      ) : (
+        <>
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -334,6 +401,8 @@ export default function SubmissionsPage() {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

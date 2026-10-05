@@ -34,7 +34,7 @@ export default function AdminLayout() {
   const navItems = [
     { name: "Dashboard", path: "/admin", icon: LayoutDashboard, end: true },
     { name: "Courses", path: "/admin/courses", icon: BookOpen },
-    { name: "Submissions", path: "/admin/submissions", icon: ClipboardCheck },
+    { name: "Mentorship Cockpit", path: "/admin/submissions", icon: ClipboardCheck },
     { name: "Files", path: "/admin/files", icon: FolderArchive },
     { name: "Students", path: "/admin/students", icon: Users },
   ];
