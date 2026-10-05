@@ -271,6 +271,10 @@ export const apiSlice = createApi({
     }),
 
     // ─── Admin & Mentor CMS Studio Endpoints ─────────────────────────────────────
+    getAdminDashboardStats: builder.query({
+      query: (period = "Monthly") => `/api/admin/dashboard/stats?period=${period}`,
+      providesTags: ["AdminCourses", "AdminLessons", "AdminStudents", "Submissions", "Enrollment"],
+    }),
     getAdminCourses: builder.query({
       query: () => "/api/admin/courses",
       providesTags: ["AdminCourses"],
@@ -481,6 +485,7 @@ export const {
   useVerifyPaymentMutation,
 
   // Admin & Mentor hooks
+  useGetAdminDashboardStatsQuery,
   useGetAdminCoursesQuery,
   useGetAdminCourseByIdQuery,
   useCreateAdminCourseMutation,
