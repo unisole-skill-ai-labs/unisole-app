@@ -6,10 +6,14 @@ import {
   Search,
   Plus,
   ArrowRight,
-  Filter,
-  CheckCircle,
-  AlertCircle,
+  MoreVertical,
+  Layers,
+  Sparkles,
+  CheckCircle2,
+  Clock,
   X,
+  FileText,
+  Award,
 } from "lucide-react";
 import {
   useGetAdminCoursesQuery,
@@ -35,7 +39,6 @@ export default function AdminCoursesPage() {
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    // Auto-generate slug from title
     const generatedSlug = val
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -79,77 +82,74 @@ export default function AdminCoursesPage() {
   });
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6 animate-fade-in">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="p-5 sm:p-7 lg:p-8 space-y-6 max-w-[1560px] mx-auto animate-fade-in font-sans">
+      {/* Header & Quick Action Row */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200/80 dark:border-slate-800/80">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Courses
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+            <BookOpen className="w-5 h-5 text-sky-500" />
+            <span>Courses & Curriculum Outlines</span>
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Browse courses, edit curriculum outlines, and manage chapter lessons.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Author curriculum chapters, configure lesson media, and structure grading criteria.
           </p>
         </div>
 
-        {isAdmin && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-lg transition-colors shadow-sm self-start sm:self-auto"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Course</span>
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-xl transition-all shadow-xs cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Create Course</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {!isAdmin && (
-        <div className="p-4 rounded-xl border border-indigo-200/70 dark:border-indigo-900/60 bg-indigo-50/60 dark:bg-indigo-950/30 text-xs text-indigo-900 dark:text-indigo-200 flex items-center justify-between">
-          <span>
-            You are logged in as <strong>Mentor</strong>. You can author and publish chapters, lessons, quizzes, and assignments inside courses.
-          </span>
-        </div>
-      )}
-
-      {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      {/* Search Bar & Filter Tabs */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search courses by title or slug..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+            className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
           />
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 self-start">
+        {/* Filter Pill Switcher */}
+        <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-[#0B1120] p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 self-start sm:self-auto">
           <button
             onClick={() => setStatusFilter("ALL")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               statusFilter === "ALL"
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
             All ({courses.length})
           </button>
           <button
             onClick={() => setStatusFilter("PUBLISHED")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               statusFilter === "PUBLISHED"
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
             Published
           </button>
           <button
             onClick={() => setStatusFilter("DRAFT")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               statusFilter === "DRAFT"
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
             Drafts
@@ -157,145 +157,166 @@ export default function AdminCoursesPage() {
         </div>
       </div>
 
-      {/* Course List */}
+      {/* Courses Cards Grid */}
       {isLoading ? (
-        <div className="p-12 text-center text-xs text-zinc-400">Loading courses...</div>
+        <div className="p-16 text-center text-xs text-slate-400">Loading courses...</div>
       ) : filteredCourses.length === 0 ? (
-        <div className="p-12 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 text-center space-y-2">
-          <BookOpen className="w-8 h-8 text-zinc-400 mx-auto" />
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        <div className="p-16 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] text-center space-y-3">
+          <BookOpen className="w-8 h-8 text-slate-400 mx-auto" />
+          <h3 className="text-sm font-bold text-slate-800 dark:text-white">
             No courses found
           </h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs text-slate-400">
             Try adjusting your search query or status filter.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredCourses.map((course: any) => (
-            <div
-              key={course.id}
-              className="p-5 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
-            >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredCourses.map((course: any, idx: number) => {
+            const colors = [
+              "bg-blue-500/10 text-blue-500",
+              "bg-amber-500/10 text-amber-500",
+              "bg-rose-500/10 text-rose-500",
+              "bg-emerald-500/10 text-emerald-500",
+            ];
+            const iconBg = colors[idx % colors.length];
+
+            return (
+              <div
+                key={course.id}
+                className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between group"
+              >
+                <div>
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
+                        <BookOpen className="w-4 h-4 stroke-[2.2]" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors line-clamp-1">
+                          {course.title}
+                        </h3>
+                        <p className="text-[10px] text-slate-400 font-mono truncate">
+                          /{course.slug}
+                        </p>
+                      </div>
+                    </div>
+                    <button className="text-slate-300 dark:text-slate-600 hover:text-slate-500 p-0.5">
+                      <MoreVertical className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 line-clamp-2 leading-relaxed">
+                    {course.shortDescription || course.description || "Comprehensive hands-on modules and coding assignments."}
+                  </p>
+                </div>
+
+                {/* Footer Metadata & Action */}
+                <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-xs">
                   <span
-                    className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded ${
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       course.status === "PUBLISHED"
-                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                        : "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
                     }`}
                   >
                     {course.status === "PUBLISHED" ? "Published" : "Draft"}
                   </span>
-                  <span className="text-[11px] text-zinc-400 font-mono truncate max-w-[140px]">
-                    {course.slug}
-                  </span>
+
+                  <Link
+                    to={`/admin/courses/${course.id}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                  >
+                    <span>Edit Curriculum</span>
+                    <ArrowRight className="w-3.5 h-3.5 stroke-[2.2]" />
+                  </Link>
                 </div>
-
-                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1">
-                  {course.title}
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">
-                  {course.shortDescription || course.description || "No description provided."}
-                </p>
               </div>
-
-              <div className="pt-4 mt-5 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                <span className="text-[11px] text-zinc-400 font-mono">
-                  {course.id.slice(0, 10)}
-                </span>
-                <Link
-                  to={`/admin/courses/${course.id}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors"
-                >
-                  <span>Edit Course</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Create Course Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-lg w-full p-6 border border-zinc-200 dark:border-zinc-800 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-              <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+          <div className="bg-white dark:bg-[#0B1120] rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
                 Create New Course
               </h2>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs font-medium border border-red-200 dark:border-red-900">
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-900">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleCreateCourse} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Course Title *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Applied Machine Learning & Neural Networks"
+                  placeholder="e.g., Advanced AI Systems Engineering"
                   value={title}
                   onChange={(e) => handleTitleChange(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   URL Slug *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="applied-ml-neural-networks"
+                  placeholder="e.g., advanced-ai-systems"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Short Description
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Short Summary
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Brief summary of what students will master..."
+                  placeholder="Brief course overview for prospective students..."
                   value={shortDescription}
                   onChange={(e) => setShortDescription(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isCreating}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-lg transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-xl transition-all shadow-xs cursor-pointer"
                 >
-                  {isCreating ? "Creating..." : "Create Course"}
+                  {isCreating ? "Creating..." : "Save Course"}
                 </button>
               </div>
             </form>

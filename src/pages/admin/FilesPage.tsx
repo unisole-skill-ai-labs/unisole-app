@@ -11,6 +11,7 @@ import {
   Trash2,
   ExternalLink,
   X,
+  MoreVertical,
 } from "lucide-react";
 
 interface MediaFile {
@@ -108,77 +109,78 @@ export default function FilesPage() {
   });
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-6 animate-fade-in">
+    <div className="p-5 sm:p-7 lg:p-8 space-y-6 max-w-[1560px] mx-auto animate-fade-in font-sans">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200/80 dark:border-slate-800/80">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Files & Resources
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+            <FolderArchive className="w-5 h-5 text-sky-500" />
+            <span>Files & Learning Resources</span>
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Media library for uploaded lecture slides, cheatsheet PDFs, and starter project ZIPs.
           </p>
         </div>
 
         <button
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-lg transition-colors shadow-sm self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-xl transition-all shadow-xs cursor-pointer self-start md:self-auto"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Upload File</span>
         </button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search files by name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-800"
+            className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
           />
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 self-start">
+        <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-[#0B1120] p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 self-start sm:self-auto overflow-x-auto">
           <button
             onClick={() => setFilter("ALL")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               filter === "ALL"
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
             All ({files.length})
           </button>
           <button
             onClick={() => setFilter("PDF")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               filter === "PDF"
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
             PDFs
           </button>
           <button
             onClick={() => setFilter("SLIDES")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               filter === "SLIDES"
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
             Slides
           </button>
           <button
             onClick={() => setFilter("CODE")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               filter === "CODE"
-                ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
             }`}
           >
             Code ZIPs
@@ -187,11 +189,11 @@ export default function FilesPage() {
       </div>
 
       {/* Files Table */}
-      <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-zinc-200/80 dark:border-zinc-800 text-[11px] font-bold uppercase tracking-wider text-zinc-400 bg-zinc-50/50 dark:bg-zinc-950/40">
+              <tr className="border-b border-slate-100 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50/50 dark:bg-[#070A11]/60">
                 <th className="p-4">File Name</th>
                 <th className="p-4">Type</th>
                 <th className="p-4">Size</th>
@@ -199,10 +201,10 @@ export default function FilesPage() {
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
               {filteredFiles.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-zinc-400">
+                  <td colSpan={5} className="p-12 text-center text-slate-400">
                     No files found matching criteria.
                   </td>
                 </tr>
@@ -210,43 +212,45 @@ export default function FilesPage() {
                 filteredFiles.map((file) => (
                   <tr
                     key={file.id}
-                    className="hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 transition-colors"
+                    className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
                   >
-                    <td className="p-4 font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-2.5">
-                      {file.type === "PDF" ? (
-                        <FileText className="w-4 h-4 text-rose-500 flex-shrink-0" />
-                      ) : file.type === "SLIDES" ? (
-                        <FileText className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                      ) : (
-                        <FileArchive className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                      )}
-                      <span className="truncate max-w-sm">{file.name}</span>
+                    <td className="p-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                        {file.type === "PDF" ? (
+                          <FileText className="w-4 h-4 text-rose-500" />
+                        ) : file.type === "SLIDES" ? (
+                          <FileText className="w-4 h-4 text-sky-500" />
+                        ) : (
+                          <FileArchive className="w-4 h-4 text-amber-500" />
+                        )}
+                      </div>
+                      <span className="font-bold truncate max-w-sm">{file.name}</span>
                     </td>
                     <td className="p-4">
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-semibold border border-zinc-200 dark:border-zinc-700">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
                         {file.type}
                       </span>
                     </td>
-                    <td className="p-4 text-zinc-500 dark:text-zinc-400 font-mono text-[11px]">
+                    <td className="p-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                       {file.size}
                     </td>
-                    <td className="p-4 text-zinc-400 font-mono text-[11px]">
+                    <td className="p-4 text-slate-400 font-mono text-[11px]">
                       {file.uploadedAt}
                     </td>
                     <td className="p-4 text-right space-x-2">
                       <button
                         onClick={() => handleCopyLink(file.id, file.url)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                         title="Copy direct file URL"
                       >
                         {copiedId === file.id ? (
                           <>
                             <Check className="w-3.5 h-3.5 text-emerald-500" />
-                            <span className="text-emerald-500">Copied</span>
+                            <span className="text-emerald-500 font-bold">Copied</span>
                           </>
                         ) : (
                           <>
-                            <Copy className="w-3.5 h-3.5" />
+                            <Copy className="w-3.5 h-3.5 text-slate-400" />
                             <span>Copy Link</span>
                           </>
                         )}
@@ -256,18 +260,18 @@ export default function FilesPage() {
                         href={file.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                        className="inline-flex items-center p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                         title="Open file in new tab"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-4 h-4" />
                       </a>
 
                       <button
                         onClick={() => handleDeleteFile(file.id)}
-                        className="p-1 text-zinc-400 hover:text-red-500"
-                        title="Delete file"
+                        className="inline-flex items-center p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                        title="Remove file"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
                   </tr>
@@ -281,91 +285,89 @@ export default function FilesPage() {
       {/* Upload File Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-lg w-full p-6 border border-zinc-200 dark:border-zinc-800 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
-              <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                Upload New File
+          <div className="bg-white dark:bg-[#0B1120] rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                Upload New Resource
               </h2>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddFile} className="space-y-4">
+            <form onSubmit={handleAddFile} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  File Name *
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  File Display Name *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Chapter 1 Slides.pdf"
+                  placeholder="e.g., Week_3_Vector_DB_Cheatsheet.pdf"
                   value={fileName}
                   onChange={(e) => setFileName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-800"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  File URL or CDN Link *
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Resource Public URL *
                 </label>
                 <input
                   type="url"
                   required
-                  placeholder="https://assets.unisole.org/..."
+                  placeholder="https://assets.unisole.org/curriculum/..."
                   value={fileUrl}
                   onChange={(e) => setFileUrl(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-800"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40 font-mono"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    Category Type
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Resource Category
                   </label>
                   <select
                     value={fileType}
-                    onChange={(e) => setFileType(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100"
+                    onChange={(e: any) => setFileType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                   >
                     <option value="PDF">PDF Document</option>
                     <option value="SLIDES">Lecture Slides</option>
-                    <option value="CODE">Code ZIP Archive</option>
+                    <option value="CODE">Code Repository ZIP</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    Approximate Size
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Approx Size
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. 3.5 MB"
                     value={fileSize}
                     onChange={(e) => setFileSize(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-lg transition-colors"
+                  className="px-4 py-2 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-xl transition-all shadow-xs cursor-pointer"
                 >
-                  Save File
+                  Save Resource
                 </button>
               </div>
             </form>

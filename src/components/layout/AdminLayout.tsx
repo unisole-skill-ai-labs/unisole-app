@@ -54,14 +54,6 @@ export default function AdminLayout() {
     { name: "Students", path: "/admin/students" },
   ];
 
-  // Active Cohort Mentees list (matching reference image sidebar roster)
-  const activeStudents = [
-    { name: "Bess Alkins", time: "2 hours ago", status: "gray", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=60" },
-    { name: "Tahsan K.", time: "30 min", status: "amber", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=60" },
-    { name: "Sanika Suny", time: "Active Now", status: "green", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=60" },
-    { name: "Devon M.", time: "20 min", status: "amber", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=60" },
-    { name: "Cardi B.", time: "Active Now", status: "green", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&auto=format&fit=crop&q=60" },
-  ];
 
   const roleLabel =
     user?.role === "SUPER_ADMIN"
@@ -186,48 +178,7 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        {/* Sidebar Active Cohort / Students Roster (Matching Reference Image) */}
-        <div className="mt-4 px-4 pt-3 pb-2 border-t border-slate-100 dark:border-slate-800/80 flex-1">
-          <div className="flex items-center justify-between mb-2.5">
-            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-              Active Cohort
-            </span>
-            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
-              {activeStudents.length}
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            {activeStudents.map((st, i) => (
-              <div key={i} className="flex items-center justify-between py-1 group cursor-pointer hover:opacity-90">
-                <div className="flex items-center gap-2 min-w-0">
-                  <img
-                    src={st.avatar}
-                    alt={st.name}
-                    className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-slate-200 dark:ring-slate-700"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                      {st.name}
-                    </p>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
-                      {st.time}
-                    </p>
-                  </div>
-                </div>
-                <span
-                  className={`w-2 h-2 rounded-full shrink-0 ${
-                    st.status === "green"
-                      ? "bg-emerald-500 ring-4 ring-emerald-500/20"
-                      : st.status === "amber"
-                      ? "bg-amber-500"
-                      : "bg-slate-300 dark:bg-slate-600"
-                  }`}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+        <div className="flex-1" />
 
         {/* User Info & Footer */}
         <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 space-y-1">
