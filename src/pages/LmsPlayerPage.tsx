@@ -728,14 +728,14 @@ export default function LmsPlayerPage() {
         </div>
 
         {/* Bottom Floating Sticky Bar with Responsive Container */}
-        <div className="sticky bottom-0 z-20 bg-[#0B1120]/95 backdrop-blur-md border-t border-slate-800 py-3">
+        <div className="sticky bottom-0 z-20 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 py-3">
           <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 flex items-center justify-between">
             <button
               onClick={() => {
                 setSelectedModule(modules[0]);
                 setCurrentView("chapter");
               }}
-              className="flex items-center gap-2 text-xs font-bold text-sky-400 hover:text-sky-300 transition-colors cursor-pointer"
+              className="flex items-center gap-2 text-xs font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition-colors cursor-pointer"
             >
               <BookOpen className="w-4 h-4 stroke-[2]" />
               <span>Course Outline</span>
@@ -795,23 +795,23 @@ export default function LmsPlayerPage() {
       ) || [];
 
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-[#070A11] text-slate-100 animate-fade-in">
+      <div className="min-h-[calc(100vh-4rem)] bg-[#F8FAFC] dark:bg-[#070A11] text-slate-900 dark:text-slate-100 animate-fade-in">
         {/* Unisole Brand Header Bar */}
-        <div className="bg-gradient-to-r from-[#0F172A] via-[#0B1120] to-[#070A11] border-b border-sky-500/20 text-white sticky top-0 z-30 shadow-lg backdrop-blur-md">
+        <div className="bg-white/95 dark:bg-[#0B1120]/95 border-b border-slate-200/80 dark:border-sky-500/20 text-slate-900 dark:text-white sticky top-0 z-30 shadow-xs dark:shadow-lg backdrop-blur-md">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3.5">
               <button
                 onClick={() => setCurrentView("overview")}
                 aria-label="Back to Course Overview"
-                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-sky-400 hover:text-white border border-sky-500/20 transition-all cursor-pointer"
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-sky-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-sky-500/20 transition-all cursor-pointer"
               >
                 <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
               </button>
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-400">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-sky-600 dark:text-sky-400">
                   Curriculum Module
                 </span>
-                <h1 className="text-base sm:text-lg font-bold text-white truncate">
+                <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">
                   {selectedModule?.title || "Module Curriculum"}
                 </h1>
               </div>
@@ -820,7 +820,7 @@ export default function LmsPlayerPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsMilestonesOpen(true)}
-                className="px-3.5 py-1.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                className="px-3.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-500/30 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
               >
                 <Award className="w-4 h-4" />
                 <span>Milestones</span>
@@ -834,11 +834,11 @@ export default function LmsPlayerPage() {
           {/* Section 1: Lecture Videos */}
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <PlayCircle className="w-4 h-4 text-sky-400" />
+              <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <PlayCircle className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                 <span>Lecture Videos ({videoLessons.length})</span>
               </h2>
-              <span className="text-[11px] text-slate-400 font-medium">Concept Immersion</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Concept Immersion</span>
             </div>
 
             <div className="space-y-2.5">
@@ -851,29 +851,29 @@ export default function LmsPlayerPage() {
                       setSelectedLesson(item);
                       setCurrentView("player");
                     }}
-                    className="bg-[#0B1120]/80 hover:bg-[#0F172A] rounded-2xl border border-sky-500/15 hover:border-sky-500/40 p-4 shadow-sm hover:shadow-sky-500/5 transition-all flex items-center justify-between cursor-pointer group"
+                    className="bg-white dark:bg-[#0B1120]/80 hover:bg-slate-50 dark:hover:bg-[#0F172A] rounded-2xl border border-slate-200/80 dark:border-sky-500/15 hover:border-sky-400/40 p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between cursor-pointer group"
                   >
                     <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                      <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                         <PlayCircle className="w-5 h-5 stroke-[2]" />
                       </div>
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-white truncate group-hover:text-sky-300 transition-colors">
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors">
                             {item.title}
                           </h3>
-                          {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                          {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
                         </div>
                         {item.duration && (
-                          <p className="text-[11px] text-slate-400 mt-0.5 truncate font-medium">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate font-medium">
                             {item.duration} {item.description ? `· ${item.description}` : ""}
                           </p>
                         )}
                       </div>
                     </div>
 
-                    <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-sky-400 shrink-0 transition-transform group-hover:translate-x-1" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-sky-500 dark:group-hover:text-sky-400 shrink-0 transition-transform group-hover:translate-x-1" />
                   </div>
                 );
               })}
@@ -884,11 +884,11 @@ export default function LmsPlayerPage() {
           {practiceLessons.length > 0 && (
             <div className="space-y-3.5">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-300 flex items-center gap-2">
-                  <FileQuestion className="w-4 h-4 text-amber-400" />
+                <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                  <FileQuestion className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   <span>Practice Assignments ({practiceLessons.length})</span>
                 </h2>
-                <span className="text-[11px] text-amber-400/80 font-medium">Ungraded Self-Assessment</span>
+                <span className="text-[11px] text-amber-600 dark:text-amber-400/80 font-medium">Ungraded Self-Assessment</span>
               </div>
 
               <div className="space-y-2.5">
@@ -902,10 +902,10 @@ export default function LmsPlayerPage() {
                         setSelectedLesson(item);
                         setCurrentView("player");
                       }}
-                      className="bg-[#0B1120]/80 hover:bg-[#0F172A] rounded-2xl border border-amber-500/20 hover:border-amber-500/50 p-4 shadow-sm hover:shadow-amber-500/5 transition-all flex items-center justify-between cursor-pointer group"
+                      className="bg-white dark:bg-[#0B1120]/80 hover:bg-slate-50 dark:hover:bg-[#0F172A] rounded-2xl border border-amber-200 dark:border-amber-500/20 hover:border-amber-400 dark:hover:border-amber-500/50 p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between cursor-pointer group"
                     >
                       <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                        <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                           {isQuizItem ? (
                             <FileQuestion className="w-5 h-5 stroke-[2]" />
                           ) : (
@@ -915,21 +915,21 @@ export default function LmsPlayerPage() {
 
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-bold text-white truncate group-hover:text-amber-300 transition-colors">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
                               {item.title}
                             </h3>
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-300">
                               {isQuizItem ? "Practice MCQ" : "Practice Project"}
                             </span>
-                            {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                            {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
                           </div>
-                          <p className="text-[11px] text-slate-400 mt-0.5 truncate font-medium">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate font-medium">
                             {item.duration || "20 Mins"} {item.description ? `· ${item.description}` : ""}
                           </p>
                         </div>
                       </div>
 
-                      <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-amber-400 shrink-0 transition-transform group-hover:translate-x-1" />
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 shrink-0 transition-transform group-hover:translate-x-1" />
                     </div>
                   );
                 })}
@@ -941,11 +941,11 @@ export default function LmsPlayerPage() {
           {testLessons.length > 0 && (
             <div className="space-y-3.5">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2">
-                  <Award className="w-4 h-4 text-sky-400" />
+                <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400 flex items-center gap-2">
+                  <Award className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                   <span>Evaluated Test Assignments ({testLessons.length})</span>
                 </h2>
-                <span className="text-[11px] text-sky-400/80 font-medium">Mentor & Autograded</span>
+                <span className="text-[11px] text-sky-600 dark:text-sky-400/80 font-medium">Mentor & Autograded</span>
               </div>
 
               <div className="space-y-2.5">
@@ -962,10 +962,10 @@ export default function LmsPlayerPage() {
                         setSelectedLesson(item);
                         setCurrentView("player");
                       }}
-                      className="bg-gradient-to-r from-[#0B1120] to-[#0D1D38] hover:to-[#112344] rounded-2xl border border-sky-500/30 hover:border-sky-400 p-4 shadow-sm hover:shadow-sky-500/10 transition-all flex items-center justify-between cursor-pointer group"
+                      className="bg-white dark:bg-gradient-to-r dark:from-[#0B1120] dark:to-[#0D1D38] hover:bg-slate-50 dark:hover:to-[#112344] rounded-2xl border border-sky-200 dark:border-sky-500/30 hover:border-sky-400 p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between cursor-pointer group"
                     >
                       <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                        <div className="w-9 h-9 rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400 flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-500/15 border border-sky-200 dark:border-sky-500/30 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                           {isCoding ? (
                             <Code2 className="w-5 h-5 stroke-[2.2]" />
                           ) : isVideo ? (
@@ -977,10 +977,10 @@ export default function LmsPlayerPage() {
 
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-bold text-white truncate group-hover:text-sky-300 transition-colors">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors">
                               {item.title}
                             </h3>
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300">
+                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-500/20 border border-sky-200 dark:border-sky-400/40 text-sky-700 dark:text-sky-300">
                               {isCoding
                                 ? "Coding Test"
                                 : isVideo
@@ -989,15 +989,15 @@ export default function LmsPlayerPage() {
                                 ? "Subjective Test"
                                 : "Capstone Project"}
                             </span>
-                            {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                            {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
                           </div>
-                          <p className="text-[11px] text-slate-400 mt-0.5 truncate font-medium">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate font-medium">
                             {item.duration || "45 Mins"} · Max Score: {item.maxScore || 100} pts
                           </p>
                         </div>
                       </div>
 
-                      <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-sky-400 shrink-0 transition-transform group-hover:translate-x-1" />
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-sky-500 dark:group-hover:text-sky-400 shrink-0 transition-transform group-hover:translate-x-1" />
                     </div>
                   );
                 })}
@@ -1053,15 +1053,15 @@ export default function LmsPlayerPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#070A11] text-slate-100 flex flex-col justify-between animate-fade-in">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#F8FAFC] dark:bg-[#070A11] text-slate-900 dark:text-slate-100 flex flex-col justify-between animate-fade-in">
       <div>
         {/* CODING TEST RUNNER */}
         {isCodingTest && (
-          <div className="bg-[#0B1120] border-b border-sky-500/20 py-8">
+          <div className="bg-slate-50/70 dark:bg-[#0B1120] border-b border-slate-200/80 dark:border-sky-500/20 py-8">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-4">
               <button
                 onClick={() => setCurrentView("chapter")}
-                className="flex items-center gap-2 text-xs font-bold text-sky-400 hover:text-white cursor-pointer mb-2 transition-colors"
+                className="flex items-center gap-2 text-xs font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-white cursor-pointer mb-2 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Curriculum Module</span>
@@ -1083,11 +1083,11 @@ export default function LmsPlayerPage() {
 
         {/* SUBJECTIVE OR VIDEO TEST RUNNER */}
         {isSubjectiveOrVideoTest && (
-          <div className="bg-[#0B1120] border-b border-sky-500/20 py-8">
+          <div className="bg-slate-50/70 dark:bg-[#0B1120] border-b border-slate-200/80 dark:border-sky-500/20 py-8">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-4">
               <button
                 onClick={() => setCurrentView("chapter")}
-                className="flex items-center gap-2 text-xs font-bold text-sky-400 hover:text-white cursor-pointer mb-2 transition-colors"
+                className="flex items-center gap-2 text-xs font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-white cursor-pointer mb-2 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Curriculum Module</span>
@@ -1115,9 +1115,9 @@ export default function LmsPlayerPage() {
 
         {/* VIDEO PLAYER VIEW */}
         {isVideo && (
-          <div className="bg-black/95 dark:bg-black w-full">
+          <div className="bg-slate-900 dark:bg-black w-full">
             <div className="max-w-4xl mx-auto sm:px-4 sm:pt-4">
-              <div className="relative bg-[#0B1120] border border-sky-500/20 w-full aspect-video sm:max-h-[480px] lg:max-h-[520px] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+              <div className="relative bg-slate-950 dark:bg-[#0B1120] border border-slate-800 dark:border-sky-500/20 w-full aspect-video sm:max-h-[480px] lg:max-h-[520px] sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col">
                 {/* Top Video Header Overlay */}
                 <div className="p-3 sm:p-4 flex items-center justify-between text-white bg-black/60 backdrop-blur-xs z-10 shrink-0">
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -1163,12 +1163,12 @@ export default function LmsPlayerPage() {
 
         {/* INTERACTIVE QUIZ VIEW */}
         {isQuiz && (
-          <div className="bg-[#0B1120] border-b border-sky-500/20 py-8">
+          <div className="bg-white dark:bg-[#0B1120] border-b border-slate-200/80 dark:border-sky-500/20 py-8">
             <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => setCurrentView("chapter")}
-                  className="flex items-center gap-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+                  className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Week Lessons</span>
@@ -1179,10 +1179,10 @@ export default function LmsPlayerPage() {
               </div>
 
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100">
+                <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-zinc-100">
                   {selectedLesson.title}
                 </h1>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
                   Answer the multiple-choice questions below to test your understanding of this module.
                 </p>
               </div>
@@ -1230,7 +1230,7 @@ export default function LmsPlayerPage() {
                       key={q.id}
                       className="bg-slate-50 dark:bg-[#0E121B] rounded-2xl p-4 sm:p-5 border border-slate-200/80 dark:border-zinc-800 space-y-3"
                     >
-                      <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
                         {qIdx + 1}. {q.question}
                       </h3>
 
@@ -1296,44 +1296,44 @@ export default function LmsPlayerPage() {
 
         {/* INTERACTIVE LAB ASSIGNMENT VIEW */}
         {isAssignment && (
-          <div className="bg-[#0B1120] border-b border-sky-500/20 py-8">
+          <div className="bg-white dark:bg-[#0B1120] border-b border-slate-200/80 dark:border-sky-500/20 py-8">
             <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => setCurrentView("chapter")}
-                  className="flex items-center gap-2 text-xs font-bold text-sky-400 hover:text-white cursor-pointer transition-colors"
+                  className="flex items-center gap-2 text-xs font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-white cursor-pointer transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Curriculum Module</span>
                 </button>
-                <span className="text-xs font-extrabold uppercase px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <span className="text-xs font-extrabold uppercase px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">
                   Practical Deliverable
                 </span>
               </div>
 
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-white">
+                <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
                   {selectedLesson.title}
                 </h1>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Complete the hands-on project tasks and submit your implementation repository link.
                 </p>
               </div>
 
               {/* Lab Instructions Box */}
-              <div className="bg-[#070A11] rounded-2xl p-5 border border-sky-500/20 space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-sky-400">
+              <div className="bg-slate-50 dark:bg-[#070A11] rounded-2xl p-5 border border-slate-200/80 dark:border-sky-500/20 space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">
                   Lab Specification & Deliverable Requirements
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-200 whitespace-pre-line leading-relaxed font-medium">
+                <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed font-medium">
                   {selectedLesson.instructions || selectedLesson.description}
                 </p>
               </div>
 
               {assignmentSubmitted ? (
-                <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 space-y-2">
+                <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/40 text-emerald-900 dark:text-emerald-200 space-y-2">
                   <div className="flex items-center gap-2 font-bold text-sm">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                     <span>Lab Deliverable Submitted!</span>
                   </div>
                   <p className="text-xs opacity-90">
@@ -1342,7 +1342,7 @@ export default function LmsPlayerPage() {
                       href={assignmentRepoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="underline font-mono text-emerald-300"
+                      className="underline font-mono text-emerald-700 dark:text-emerald-300"
                     >
                       {assignmentRepoUrl}
                     </a>
@@ -1351,11 +1351,11 @@ export default function LmsPlayerPage() {
               ) : (
                 <form onSubmit={handleAssignmentSubmit} className="space-y-4 pt-2">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-300">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       GitHub Repository or Project Link *
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
                         <Github className="w-4 h-4" />
                       </div>
                       <input
@@ -1364,13 +1364,13 @@ export default function LmsPlayerPage() {
                         value={assignmentRepoUrl}
                         onChange={(e) => setAssignmentRepoUrl(e.target.value)}
                         placeholder="https://github.com/your-username/repo-name"
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-sky-500/30 bg-[#070A11] text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-sky-500/30 bg-white dark:bg-[#070A11] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-300">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       Implementation Notes / Architecture Highlights (Optional)
                     </label>
                     <textarea
@@ -1378,7 +1378,7 @@ export default function LmsPlayerPage() {
                       value={assignmentNotes}
                       onChange={(e) => setAssignmentNotes(e.target.value)}
                       placeholder="Brief notes explaining your architectural choices, containerization, or benchmark results..."
-                      className="w-full p-3 rounded-xl border border-sky-500/30 bg-[#070A11] text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="w-full p-3 rounded-xl border border-slate-200 dark:border-sky-500/30 bg-white dark:bg-[#070A11] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
 
@@ -1395,19 +1395,19 @@ export default function LmsPlayerPage() {
         )}
 
         {/* Player Sub-tabs: Notes & Help */}
-        <div className="border-b border-sky-500/20 bg-[#0B1120]">
+        <div className="border-b border-slate-200/80 dark:border-sky-500/20 bg-white dark:bg-[#0B1120]">
           <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 flex items-center">
             <button
               onClick={() => setPlayerTab("notes")}
               className={`py-3.5 px-6 text-sm font-semibold relative transition-colors cursor-pointer ${
                 playerTab === "notes"
-                  ? "text-white font-bold"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "text-slate-900 dark:text-white font-bold"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
               Notes
               {playerTab === "notes" && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-400 rounded-full" />
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500 rounded-full" />
               )}
             </button>
 
@@ -1415,14 +1415,14 @@ export default function LmsPlayerPage() {
               onClick={() => setPlayerTab("help")}
               className={`py-3.5 px-6 text-sm font-semibold relative transition-colors flex items-center gap-1.5 cursor-pointer ${
                 playerTab === "help"
-                  ? "text-white font-bold"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "text-slate-900 dark:text-white font-bold"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
               }`}
             >
               <span>Help</span>
               <span className="w-2 h-2 rounded-full bg-rose-500 inline-block mb-1" />
               {playerTab === "help" && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-400 rounded-full" />
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500 rounded-full" />
               )}
             </button>
           </div>
@@ -1435,28 +1435,28 @@ export default function LmsPlayerPage() {
               {/* Contact Support */}
               <div
                 onClick={() => setSupportTicketOpen(true)}
-                className="bg-[#0B1120] rounded-2xl border border-sky-500/20 p-4 shadow-sm hover:border-sky-500/40 hover:shadow-sky-500/5 transition-all flex items-center justify-between cursor-pointer group"
+                className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200/80 dark:border-sky-500/20 p-4 shadow-2xs dark:shadow-sm hover:border-sky-400 dark:hover:border-sky-500/40 hover:shadow-xs transition-all flex items-center justify-between cursor-pointer group"
               >
                 <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                  <div className="w-10 h-10 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
                     <SlidersHorizontal className="w-5 h-5 stroke-[2]" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors">
                       Contact Program Support & Mentor
                     </h4>
-                    <p className="text-xs text-slate-400 mt-0.5 truncate">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                       Academic questions, technical assistance, or assignment guidance
                     </p>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-sky-400 shrink-0 transition-transform group-hover:translate-x-1" />
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-sky-500 dark:group-hover:text-sky-400 shrink-0 transition-transform group-hover:translate-x-1" />
               </div>
             </div>
           ) : (
             /* Notes Tab */
-            <div className="bg-[#0B1120] rounded-2xl border border-sky-500/20 p-4 sm:p-5 shadow-sm space-y-3">
-              <h4 className="text-xs font-bold text-white">
+            <div className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200/80 dark:border-sky-500/20 p-4 sm:p-5 shadow-2xs dark:shadow-sm space-y-3">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
                 Lecture Notes for {selectedLesson?.title}
               </h4>
               <textarea
@@ -1467,7 +1467,7 @@ export default function LmsPlayerPage() {
                 }}
                 rows={4}
                 placeholder="Take personal lecture notes, write code snippets, or save mentor feedback..."
-                className="w-full text-xs p-3 rounded-xl border border-sky-500/30 bg-[#070A11] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-sky-500/30 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
               />
               <div className="flex items-center justify-between">
                 <button
@@ -1477,7 +1477,7 @@ export default function LmsPlayerPage() {
                   Save Notes
                 </button>
                 {notesSaved && (
-                  <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Saved!</span>
                   </span>
@@ -1489,7 +1489,7 @@ export default function LmsPlayerPage() {
       </div>
 
       {/* Bottom Sticky Lesson Navigation */}
-      <div className="sticky bottom-0 z-20 bg-[#0B1120]/95 backdrop-blur-md border-t border-sky-500/20 py-3.5">
+      <div className="sticky bottom-0 z-20 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-md border-t border-slate-200/80 dark:border-sky-500/20 py-3.5">
         <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           <button
             onClick={handlePreviousLesson}
@@ -1497,14 +1497,14 @@ export default function LmsPlayerPage() {
             aria-label="Previous lesson"
             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
               hasPrevious
-                ? "bg-sky-500/15 text-sky-400 hover:bg-sky-500/25 border border-sky-500/30 shadow-xs"
-                : "bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed"
+                ? "bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-500/25 border border-sky-200 dark:border-sky-500/30 shadow-2xs"
+                : "bg-slate-100 dark:bg-slate-900 text-slate-300 dark:text-slate-600 border border-slate-200 dark:border-slate-800 cursor-not-allowed"
             }`}
           >
             <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
           </button>
 
-          <span className="text-xs font-bold text-slate-300">
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
             Lesson {currentLessonIndex + 1} of {allLessonItems.length}
           </span>
 
@@ -1514,8 +1514,8 @@ export default function LmsPlayerPage() {
             aria-label="Next lesson"
             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
               hasNext
-                ? "bg-sky-500/15 text-sky-400 hover:bg-sky-500/25 border border-sky-500/30 shadow-xs"
-                : "bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed"
+                ? "bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-500/25 border border-sky-200 dark:border-sky-500/30 shadow-2xs"
+                : "bg-slate-100 dark:bg-slate-900 text-slate-300 dark:text-slate-600 border border-slate-200 dark:border-slate-800 cursor-not-allowed"
             }`}
           >
             <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -1523,30 +1523,28 @@ export default function LmsPlayerPage() {
         </div>
       </div>
 
-
-
       {/* Support Ticket Modal */}
       {supportTicketOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B1120] w-full max-w-sm rounded-3xl shadow-2xl border border-sky-500/30 p-6 space-y-4 animate-scale-in">
-            <div className="flex items-center justify-between pb-2 border-b border-sky-500/20">
-              <h3 className="text-base font-bold text-white">Create Support Ticket</h3>
-              <button onClick={() => setSupportTicketOpen(false)} className="p-1 text-slate-400 hover:text-white cursor-pointer">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#0B1120] text-slate-900 dark:text-white w-full max-w-sm rounded-3xl shadow-2xl border border-slate-200 dark:border-sky-500/30 p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-sky-500/20">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Create Support Ticket</h3>
+              <button onClick={() => setSupportTicketOpen(false)} className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Our academic mentoring team reviews tickets within 2 business hours.
             </p>
             <textarea
               rows={3}
               placeholder="Describe the issue you're facing..."
-              className="w-full text-xs p-3 rounded-xl border border-sky-500/30 bg-[#070A11] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-sky-500/30 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
             <div className="flex justify-end gap-2 pt-2">
               <button
                 onClick={() => setSupportTicketOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:bg-slate-800 cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Cancel
               </button>
