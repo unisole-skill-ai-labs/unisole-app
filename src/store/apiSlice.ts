@@ -403,6 +403,49 @@ export const apiSlice = createApi({
       query: () => "/api/admin/enrollments",
       providesTags: ["AdminStudents"],
     }),
+
+    // Mentorship & Cockpit
+    getStudentMentor: builder.query({
+      query: () => "/api/lms/mentor/me",
+      providesTags: ["Cohort"],
+    }),
+    getMentorCockpit: builder.query({
+      query: () => "/api/lms/mentor/cockpit",
+      providesTags: ["Cohort", "Submissions"],
+    }),
+
+    // Course Assignments Studio (Practice vs Test)
+    getCourseAssignments: builder.query({
+      query: (params) => ({
+        url: "/api/lms/assignments",
+        params,
+      }),
+      providesTags: ["Lesson"],
+    }),
+    createCourseAssignment: builder.mutation({
+      query: (body) => ({
+        url: "/api/lms/assignments",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Lesson"],
+    }),
+    submitAssessmentTask: builder.mutation({
+      query: (body) => ({
+        url: "/api/lms/assignments/submit",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Submissions", "Progress", "Activities"],
+    }),
+    gradeSubmission: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `/api/lms/submissions/${id}/grade`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Submissions", "Cohort", "Activities"],
+    }),
   }),
 });
 
@@ -456,4 +499,12 @@ export const {
   useGetNotesQuery,
   useSaveNoteMutation,
   useGetCohortDataQuery,
+
+  // Mentorship & Assessment Studio hooks
+  useGetStudentMentorQuery,
+  useGetMentorCockpitQuery,
+  useGetCourseAssignmentsQuery,
+  useCreateCourseAssignmentMutation,
+  useSubmitAssessmentTaskMutation,
+  useGradeSubmissionMutation,
 } = apiSlice;
