@@ -41,7 +41,7 @@ export default function AdminLayout() {
   const navItems = [
     { name: "Dashboard", path: "/admin", icon: LayoutDashboard, badge: "1", end: true },
     { name: "Courses", path: "/admin/courses", icon: BookOpen, badge: "3" },
-    { name: "Mentorship Cockpit", path: "/admin/submissions", icon: ClipboardCheck, badge: "NEW", isNew: true },
+    { name: "Mentorship Cockpit", path: "/admin/submissions", icon: ClipboardCheck },
     { name: "Media Files", path: "/admin/files", icon: FolderArchive, badge: "1" },
     { name: "Students", path: "/admin/students", icon: Users },
   ];
@@ -163,13 +163,7 @@ export default function AdminLayout() {
                   <span>{item.name}</span>
                 </div>
                 {item.badge && (
-                  <span
-                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      item.isNew
-                        ? "bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/30"
-                        : "bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                    }`}
-                  >
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                     {item.badge}
                   </span>
                 )}
