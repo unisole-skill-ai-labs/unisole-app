@@ -21,7 +21,14 @@ export default function AdminGuard({ children }: AdminGuardProps) {
 
   // 2. Check Role
   const role = user?.role ? String(user.role).toUpperCase() : "";
-  const isAllowed = ["ADMIN", "SUPER_ADMIN", "MENTOR", "MEMBER"].includes(role);
+  const userRoles = [
+    role,
+    ...(Array.isArray(user?.roles) ? user.roles.map((r: any) => String(r).toUpperCase()) : []),
+    ...(Array.isArray(user?.metadata?.roles) ? user.metadata.roles.map((r: any) => String(r).toUpperCase()) : []),
+  ];
+  const isAllowed = userRoles.some((r) =>
+    ["ADMIN", "SUPER_ADMIN", "MENTOR", "MEMBER", "PROGRAM_MANAGER"].includes(r)
+  );
 
   // 3. User is logged in as a STUDENT: Show informative Access Restricted screen
   if (!isAllowed) {
