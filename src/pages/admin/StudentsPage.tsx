@@ -125,10 +125,6 @@ export default function StudentsPage() {
             <GraduationCap className="w-3.5 h-3.5" />
             <span>Enrolled Students: {totalEnrolledCount}</span>
           </span>
-          <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Purchased Courses: {totalPurchasesCount}</span>
-          </span>
         </div>
       </div>
 
@@ -215,20 +211,19 @@ export default function StudentsPage() {
                 <th className="p-4">Student</th>
                 <th className="p-4">Contact</th>
                 <th className="p-4">Enrolled Course(s) & Tracks</th>
-                <th className="p-4">Enrollment Status</th>
                 <th className="p-4 text-right">Enrolled Date</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="p-12 text-center text-slate-400">
+                  <td colSpan={4} className="p-12 text-center text-slate-400">
                     Loading student course roster from database...
                   </td>
                 </tr>
               ) : filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-12 text-center text-slate-400">
+                  <td colSpan={4} className="p-12 text-center text-slate-400">
                     {isProgramManager
                       ? "No enrolled students found. Only students with active course enrollments are visible."
                       : "No students matching your filter criteria."}
@@ -323,20 +318,6 @@ export default function StudentsPage() {
                         ) : (
                           <span className="text-[11px] text-slate-400 italic">
                             No enrolled courses
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Enrollment Status */}
-                      <td className="p-4">
-                        {hasEnrollments ? (
-                          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span>Enrolled Learner</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                            Registered Account
                           </span>
                         )}
                       </td>
