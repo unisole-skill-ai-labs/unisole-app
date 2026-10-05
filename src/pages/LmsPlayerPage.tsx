@@ -269,16 +269,8 @@ export default function LmsPlayerPage() {
     }
   };
 
-  // AI Chat & Support Ticket Modals
-  const [aiChatOpen, setAiChatOpen] = useState(false);
+  // Support Ticket Modal
   const [supportTicketOpen, setSupportTicketOpen] = useState(false);
-  const [aiMessage, setAiMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState<Array<{ role: "ai" | "user"; text: string }>>([
-    {
-      role: "ai",
-      text: "Hello! I am Glaide, your real-time course AI mentor. Ask me anything about this lecture or hands-on implementation.",
-    },
-  ]);
 
   // All lessons flat array for navigation
   const allLessonItems = useMemo(() => {
@@ -414,23 +406,6 @@ export default function LmsPlayerPage() {
     markLessonComplete(selectedLesson.id);
   };
 
-  const handleSendAiMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!aiMessage.trim()) return;
-    const userText = aiMessage.trim();
-    setChatHistory((prev) => [...prev, { role: "user", text: userText }]);
-    setAiMessage("");
-
-    setTimeout(() => {
-      let reply = `In ${selectedLesson?.title || "this module"}, the architecture isolates critical state logic to ensure reliable execution. Would you like a step-by-step code demonstration or architecture explanation?`;
-      if (userText.toLowerCase().includes("rag") || userText.toLowerCase().includes("vector")) {
-        reply = "Hybrid RAG combines dense semantic embeddings with sparse lexical BM25 matching, reranking candidates using Reciprocal Rank Fusion for optimal recall.";
-      } else if (userText.toLowerCase().includes("mvp") || userText.toLowerCase().includes("pitch")) {
-        reply = "For your incubator MVP, prioritize the single core wedge feature delivering 10x value to early users before expanding your feature scope.";
-      }
-      setChatHistory((prev) => [...prev, { role: "ai", text: reply }]);
-    }, 500);
-  };
 
   // -------------------------------------------------------------
   // VIEW 1: Course Overview (Unisole Brand Theme)
@@ -655,7 +630,7 @@ export default function LmsPlayerPage() {
 
                       <div className="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                         <button
-                          onClick={() => setAiChatOpen(true)}
+                          onClick={() => setSupportTicketOpen(true)}
                           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 text-xs font-bold transition-colors cursor-pointer"
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
@@ -1453,51 +1428,25 @@ export default function LmsPlayerPage() {
           </div>
         </div>
 
-        {/* Tab Content: Help (Glaide AI & Support Ticket) or Notes */}
+        {/* Tab Content: Help (Mentor & Program Support) or Notes */}
         <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-3.5">
           {playerTab === "help" ? (
             <div className="space-y-3">
-              {/* Card 1: Glaide / AI Chat Assistance */}
-              <div
-                onClick={() => setAiChatOpen(true)}
-                className="bg-[#0B1120] rounded-2xl border border-sky-500/20 p-4 shadow-sm hover:border-sky-500/40 hover:shadow-sky-500/5 transition-all flex items-center justify-between cursor-pointer group"
-              >
-                <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                  <div className="w-10 h-10 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
-                    <Bot className="w-5 h-5 stroke-[2]" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <h4 className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors">
-                        Glaide
-                      </h4>
-                      <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40">
-                        NEW
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-0.5 truncate">
-                      Real-time AI mentor assistance
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-sky-400 shrink-0 transition-transform group-hover:translate-x-1" />
-              </div>
-
-              {/* Card 2: Contact Support */}
+              {/* Contact Support */}
               <div
                 onClick={() => setSupportTicketOpen(true)}
                 className="bg-[#0B1120] rounded-2xl border border-sky-500/20 p-4 shadow-sm hover:border-sky-500/40 hover:shadow-sky-500/5 transition-all flex items-center justify-between cursor-pointer group"
               >
                 <div className="flex items-center gap-3.5 min-w-0 pr-2">
-                  <div className="w-10 h-10 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
                     <SlidersHorizontal className="w-5 h-5 stroke-[2]" />
                   </div>
                   <div className="min-w-0">
                     <h4 className="text-sm font-bold text-white group-hover:text-sky-300 transition-colors">
-                      Contact Program Support
+                      Contact Program Support & Mentor
                     </h4>
                     <p className="text-xs text-slate-400 mt-0.5 truncate">
-                      Academic, technical, or mentor ticket
+                      Academic questions, technical assistance, or assignment guidance
                     </p>
                   </div>
                 </div>
@@ -1574,68 +1523,7 @@ export default function LmsPlayerPage() {
         </div>
       </div>
 
-      {/* Glaide AI Assistant Modal */}
-      {aiChatOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0B1120] w-full max-w-md rounded-3xl shadow-2xl border border-sky-500/30 flex flex-col h-[520px] animate-scale-in overflow-hidden">
-            {/* Modal Header */}
-            <div className="p-4 border-b border-sky-500/20 flex items-center justify-between bg-[#070A11]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 flex items-center justify-center">
-                  <Bot className="w-4 h-4 stroke-[2]" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">Glaide AI Mentor</h3>
-                  <p className="text-[10px] text-slate-400">Real-time Concept & Code Assistant</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setAiChatOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            {/* Chat Body */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-3">
-              {chatHistory.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
-                      msg.role === "user"
-                        ? "bg-sky-500 text-slate-950 font-medium"
-                        : "bg-slate-800/80 text-slate-100 border border-sky-500/15"
-                    }`}
-                  >
-                    {msg.text}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Chat Input */}
-            <form onSubmit={handleSendAiMessage} className="p-3 border-t border-sky-500/20 flex items-center gap-2 bg-[#070A11]">
-              <input
-                type="text"
-                value={aiMessage}
-                onChange={(e) => setAiMessage(e.target.value)}
-                placeholder="Ask Glaide about this lecture..."
-                className="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-sky-500/30 bg-[#0B1120] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              />
-              <button
-                type="submit"
-                className="p-2.5 rounded-xl bg-sky-500 text-slate-950 hover:bg-sky-400 transition-colors cursor-pointer"
-              >
-                <Send className="w-3.5 h-3.5 stroke-[2.5]" />
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Support Ticket Modal */}
       {supportTicketOpen && (
