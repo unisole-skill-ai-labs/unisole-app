@@ -412,7 +412,10 @@ export const apiSlice = createApi({
 
     // Students & Roster
     getAdminStudents: builder.query({
-      query: () => "/api/admin/students",
+      query: (params) => ({
+        url: "/api/admin/students",
+        params,
+      }),
       providesTags: ["AdminStudents"],
     }),
     getAdminEnrollments: builder.query({
