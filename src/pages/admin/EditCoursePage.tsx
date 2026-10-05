@@ -14,6 +14,7 @@ import {
   Bold,
   Italic,
   Code,
+  Code2,
   Heading,
   List,
   Link as LinkIcon,
@@ -23,6 +24,12 @@ import {
   HelpCircle,
   FileCode,
   Loader2,
+  PlayCircle,
+  FileQuestion,
+  Award,
+  Video,
+  BookOpen,
+  Clock,
 } from "lucide-react";
 import {
   useGetAdminCourseByIdQuery,
@@ -71,6 +78,9 @@ export default function EditCoursePage() {
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonStatus, setLessonStatus] = useState<ContentStatus>("DRAFT");
   const [isFreePreview, setIsFreePreview] = useState(false);
+  const [curriculumMode, setCurriculumMode] = useState<"LECTURE" | "PRACTICE" | "TEST">("LECTURE");
+  const [practiceType, setPracticeType] = useState<"MCQ" | "PROJECT">("MCQ");
+  const [testType, setTestType] = useState<"CODING_TEST" | "SUBJECTIVE_TEST" | "VIDEO_TEST" | "PROJECT">("CODING_TEST");
   const [lessonType, setLessonType] = useState<LessonType>("READING");
   const [contentMarkdown, setContentMarkdown] = useState("");
   const [contentHtml, setContentHtml] = useState("");
@@ -81,7 +91,7 @@ export default function EditCoursePage() {
   const [codeLanguage, setCodeLanguage] = useState("typescript");
   const [codeSnippet, setCodeSnippet] = useState("");
 
-  // Quiz State
+  // Quiz State (Practice MCQ)
   const [passingScore, setPassingScore] = useState(70);
   const [questions, setQuestions] = useState<QuizQuestion[]>([
     {
@@ -93,12 +103,35 @@ export default function EditCoursePage() {
     },
   ]);
 
-  // Assignment State
+  // Practice Project & Capstone Assignment State
   const [assignmentInstructions, setAssignmentInstructions] = useState("");
   const [allowedTypes, setAllowedTypes] = useState<("URL" | "GITHUB" | "FILE" | "TEXT")[]>([
     "URL",
+    "GITHUB",
   ]);
   const [maxPoints, setMaxPoints] = useState(100);
+
+  // Evaluated Coding Test State
+  const [codingStarterCode, setCodingStarterCode] = useState(
+    "import torch\n\ndef matrix_multiply(A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:\n    # Implement your tensor matrix multiplication\n    pass\n"
+  );
+  const [codingLanguage, setCodingLanguage] = useState("python");
+  const [codingTestCases, setCodingTestCases] = useState<
+    Array<{ input: string; expected: string; isHidden: boolean }>
+  >([
+    { input: "A = torch.tensor([[1, 2], [3, 4]]), B = torch.tensor([[5, 6], [7, 8]])", expected: "tensor([[19, 22], [43, 50]])", isHidden: false },
+    { input: "A = torch.eye(3), B = torch.eye(3)", expected: "tensor([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])", isHidden: true },
+  ]);
+
+  // Evaluated Subjective Test State
+  const [subjectivePrompt, setSubjectivePrompt] = useState("");
+  const [subjectiveRubric, setSubjectiveRubric] = useState(
+    "1. Architectural rationale & trade-offs (10 pts)\n2. Production scalability & memory profiling (10 pts)\n3. Edge case resilience & latency benchmarks (10 pts)"
+  );
+
+  // Evaluated Video Viva Test State
+  const [videoPrompt, setVideoPrompt] = useState("");
+  const [videoDurationLimitSec, setVideoDurationLimitSec] = useState(180);
 
   // Attachments State
   const [attachments, setAttachments] = useState<
@@ -126,6 +159,31 @@ export default function EditCoursePage() {
       try {
         if (activeLessonData.content && activeLessonData.content.startsWith("{")) {
           const parsed = JSON.parse(activeLessonData.content);
+          if (parsed.curriculumMode) {
+            setCurriculumMode(parsed.curriculumMode);
+          } else if (parsed.type === "QUIZ" || parsed.type === "quiz") {
+            setCurriculumMode("PRACTICE");
+            setPracticeType("MCQ");
+          } else if (parsed.type === "CODING_TEST" || parsed.testType === "CODING_TEST") {
+            setCurriculumMode("TEST");
+            setTestType("CODING_TEST");
+          } else if (parsed.type === "VIDEO_TEST" || parsed.testType === "VIDEO_TEST") {
+            setCurriculumMode("TEST");
+            setTestType("VIDEO_TEST");
+          } else if (parsed.type === "SUBJECTIVE_TEST" || parsed.testType === "SUBJECTIVE_TEST") {
+            setCurriculumMode("TEST");
+            setTestType("SUBJECTIVE_TEST");
+          } else if (parsed.category === "TEST") {
+            setCurriculumMode("TEST");
+          } else if (parsed.category === "PRACTICE") {
+            setCurriculumMode("PRACTICE");
+          } else {
+            setCurriculumMode("LECTURE");
+          }
+
+          if (parsed.practiceType) setPracticeType(parsed.practiceType);
+          if (parsed.testType) setTestType(parsed.testType);
+
           setLessonType(parsed.type || "READING");
           setIsFreePreview(!!parsed.isFreePreview);
           const rawMd = parsed.contentMarkdown || "";
@@ -134,14 +192,30 @@ export default function EditCoursePage() {
           setContentHtml(rawHtml);
           setCodeLanguage(parsed.codeLanguage || "typescript");
           setCodeSnippet(parsed.codeSnippet || "");
+
           if (parsed.quiz) {
             setPassingScore(parsed.quiz.passingScorePercent || 70);
             setQuestions(parsed.quiz.questions || []);
           }
           if (parsed.assignment) {
             setAssignmentInstructions(parsed.assignment.instructions || "");
-            setAllowedTypes(parsed.assignment.allowedTypes || ["URL"]);
+            setAllowedTypes(parsed.assignment.allowedTypes || ["URL", "GITHUB"]);
             setMaxPoints(parsed.assignment.maxPoints || 100);
+          }
+          if (parsed.codingTest) {
+            setCodingStarterCode(parsed.codingTest.starterCode || "");
+            setCodingLanguage(parsed.codingTest.language || "python");
+            if (Array.isArray(parsed.codingTest.testCases)) {
+              setCodingTestCases(parsed.codingTest.testCases);
+            }
+          }
+          if (parsed.subjectiveTest) {
+            setSubjectivePrompt(parsed.subjectiveTest.prompt || "");
+            setSubjectiveRubric(parsed.subjectiveTest.rubrics || "");
+          }
+          if (parsed.videoTest) {
+            setVideoPrompt(parsed.videoTest.prompt || "");
+            setVideoDurationLimitSec(parsed.videoTest.maxDurationSec || 180);
           }
           if (parsed.attachments) {
             setAttachments(parsed.attachments);
@@ -151,11 +225,13 @@ export default function EditCoursePage() {
           setContentMarkdown(raw);
           setContentHtml(renderMarkdownToHtml(raw));
           setLessonType("READING");
+          setCurriculumMode("LECTURE");
         }
       } catch {
         const raw = activeLessonData.content || "";
         setContentMarkdown(raw);
         setContentHtml(renderMarkdownToHtml(raw));
+        setCurriculumMode("LECTURE");
       }
     }
   }, [activeLessonData]);
@@ -166,7 +242,29 @@ export default function EditCoursePage() {
     status: lessonStatus,
     durationMinutes,
     videoUrl,
-    type: lessonType,
+    type:
+      curriculumMode === "LECTURE"
+        ? "READING"
+        : curriculumMode === "PRACTICE"
+        ? practiceType === "MCQ"
+          ? "QUIZ"
+          : "ASSIGNMENT"
+        : testType === "CODING_TEST"
+        ? "CODING_TEST"
+        : testType === "VIDEO_TEST"
+        ? "VIDEO_TEST"
+        : testType === "SUBJECTIVE_TEST"
+        ? "SUBJECTIVE_TEST"
+        : "ASSIGNMENT",
+    category:
+      curriculumMode === "PRACTICE"
+        ? "PRACTICE"
+        : curriculumMode === "TEST"
+        ? "TEST"
+        : "LECTURE",
+    curriculumMode,
+    practiceType,
+    testType,
     isFreePreview,
     contentMarkdown,
     contentHtml,
@@ -181,6 +279,22 @@ export default function EditCoursePage() {
       allowedTypes,
       maxPoints,
     },
+    codingTest: {
+      starterCode: codingStarterCode,
+      language: codingLanguage,
+      testCases: codingTestCases,
+      maxScore: maxPoints,
+    },
+    subjectiveTest: {
+      prompt: subjectivePrompt,
+      rubrics: subjectiveRubric,
+      maxScore: maxPoints,
+    },
+    videoTest: {
+      prompt: videoPrompt,
+      maxDurationSec: videoDurationLimitSec,
+      maxScore: maxPoints,
+    },
     attachments,
   };
 
@@ -190,6 +304,10 @@ export default function EditCoursePage() {
 
     const payloadContent = JSON.stringify({
       type: currentData.type,
+      category: currentData.category,
+      curriculumMode: currentData.curriculumMode,
+      practiceType: currentData.practiceType,
+      testType: currentData.testType,
       isFreePreview: currentData.isFreePreview,
       contentMarkdown: currentData.contentMarkdown,
       contentHtml: currentData.contentHtml,
@@ -197,6 +315,9 @@ export default function EditCoursePage() {
       codeSnippet: currentData.codeSnippet,
       quiz: currentData.quiz,
       assignment: currentData.assignment,
+      codingTest: currentData.codingTest,
+      subjectiveTest: currentData.subjectiveTest,
+      videoTest: currentData.videoTest,
       attachments: currentData.attachments,
     });
 
@@ -208,7 +329,9 @@ export default function EditCoursePage() {
         durationMinutes: currentData.durationMinutes,
         videoUrl: currentData.videoUrl,
         content: payloadContent,
-        description: currentData.contentMarkdown ? currentData.contentMarkdown.replace(/<[^>]*>/g, "").slice(0, 200) : "",
+        description: currentData.contentMarkdown
+          ? currentData.contentMarkdown.replace(/<[^>]*>/g, "").slice(0, 200)
+          : "",
       },
     }).unwrap();
   };
@@ -220,6 +343,30 @@ export default function EditCoursePage() {
     itemKey: activeLessonId,
     delayMs: 1200,
   });
+
+  // Test case management for Coding Test
+  const addTestCase = () => {
+    setCodingTestCases((prev) => [
+      ...prev,
+      { input: "", expected: "", isHidden: false },
+    ]);
+  };
+
+  const updateTestCase = (
+    idx: number,
+    field: "input" | "expected" | "isHidden",
+    value: any
+  ) => {
+    setCodingTestCases((prev) => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], [field]: value };
+      return copy;
+    });
+  };
+
+  const removeTestCase = (idx: number) => {
+    setCodingTestCases((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   // Create & attach a new Chapter (Module)
   const handleAddChapter = async (e: React.FormEvent) => {
@@ -496,6 +643,7 @@ export default function EditCoursePage() {
                 <ChapterSection
                   key={cMod.moduleId}
                   moduleId={cMod.moduleId}
+                  moduleTitle={cMod.title}
                   position={idx + 1}
                   activeLessonId={activeLessonId}
                   onSelectLesson={(lessonId) => setActiveLessonId(lessonId)}
@@ -529,38 +677,128 @@ export default function EditCoursePage() {
               {/* Lesson Details Header */}
               <div className="space-y-4 pb-6 border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  {/* Type Selector */}
-                  <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-[#070A11] p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 self-start">
-                    <button
-                      onClick={() => setLessonType("READING")}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                        lessonType === "READING"
-                          ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-                      }`}
-                    >
-                      Notes
-                    </button>
-                    <button
-                      onClick={() => setLessonType("QUIZ")}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                        lessonType === "QUIZ"
-                          ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-                      }`}
-                    >
-                      Quiz
-                    </button>
-                    <button
-                      onClick={() => setLessonType("ASSIGNMENT")}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                        lessonType === "ASSIGNMENT"
-                          ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-                      }`}
-                    >
-                      Assignment
-                    </button>
+                  {/* Mode & Category Hierarchy Selector */}
+                  <div className="flex flex-col gap-2.5">
+                    {/* Level 1: Curriculum Mode */}
+                    <div className="flex flex-wrap items-center gap-1.5 bg-slate-100/90 dark:bg-[#070A11] p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 self-start">
+                      <button
+                        type="button"
+                        onClick={() => setCurriculumMode("LECTURE")}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                          curriculumMode === "LECTURE"
+                            ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 shadow-2xs"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                        }`}
+                      >
+                        <PlayCircle className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Lecture (Lec)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurriculumMode("PRACTICE")}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                          curriculumMode === "PRACTICE"
+                            ? "bg-white dark:bg-amber-500/20 text-amber-600 dark:text-amber-300 shadow-2xs"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                        }`}
+                      >
+                        <FileQuestion className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Practice Assignment</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurriculumMode("TEST")}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                          curriculumMode === "TEST"
+                            ? "bg-white dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 shadow-2xs"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                        }`}
+                      >
+                        <Award className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Test Assignment</span>
+                      </button>
+                    </div>
+
+                    {/* Level 2 Sub-selectors */}
+                    {curriculumMode === "PRACTICE" && (
+                      <div className="flex items-center gap-1.5 p-1 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200/60 dark:border-amber-800/40 self-start">
+                        <button
+                          type="button"
+                          onClick={() => setPracticeType("MCQ")}
+                          className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                            practiceType === "MCQ"
+                              ? "bg-amber-500 text-slate-950 shadow-2xs"
+                              : "text-amber-800 dark:text-amber-300 hover:text-amber-950"
+                          }`}
+                        >
+                          MCQ (Knowledge Check)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPracticeType("PROJECT")}
+                          className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                            practiceType === "PROJECT"
+                              ? "bg-amber-500 text-slate-950 shadow-2xs"
+                              : "text-amber-800 dark:text-amber-300 hover:text-amber-950"
+                          }`}
+                        >
+                          Projects (Hands-on Lab)
+                        </button>
+                      </div>
+                    )}
+
+                    {curriculumMode === "TEST" && (
+                      <div className="flex items-center gap-1.5 p-1 bg-indigo-50 dark:bg-indigo-950/20 rounded-xl border border-indigo-200/60 dark:border-indigo-800/40 self-start overflow-x-auto max-w-full">
+                        <button
+                          type="button"
+                          onClick={() => setTestType("CODING_TEST")}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all whitespace-nowrap ${
+                            testType === "CODING_TEST"
+                              ? "bg-indigo-600 text-white shadow-2xs"
+                              : "text-indigo-800 dark:text-indigo-300 hover:text-indigo-950"
+                          }`}
+                        >
+                          <Code2 className="w-3 h-3" />
+                          <span>Coding Test</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTestType("SUBJECTIVE_TEST")}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all whitespace-nowrap ${
+                            testType === "SUBJECTIVE_TEST"
+                              ? "bg-indigo-600 text-white shadow-2xs"
+                              : "text-indigo-800 dark:text-indigo-300 hover:text-indigo-950"
+                          }`}
+                        >
+                          <BookOpen className="w-3 h-3" />
+                          <span>Subjective Test</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTestType("VIDEO_TEST")}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all whitespace-nowrap ${
+                            testType === "VIDEO_TEST"
+                              ? "bg-indigo-600 text-white shadow-2xs"
+                              : "text-indigo-800 dark:text-indigo-300 hover:text-indigo-950"
+                          }`}
+                        >
+                          <Video className="w-3 h-3" />
+                          <span>Video Tests</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTestType("PROJECT")}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all whitespace-nowrap ${
+                            testType === "PROJECT"
+                              ? "bg-indigo-600 text-white shadow-2xs"
+                              : "text-indigo-800 dark:text-indigo-300 hover:text-indigo-950"
+                          }`}
+                        >
+                          <Award className="w-3 h-3" />
+                          <span>Projects (Capstone)</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Status & Free Preview Controls */}
@@ -601,37 +839,39 @@ export default function EditCoursePage() {
                   />
                 </div>
 
-                {/* Video Link & Estimated Duration */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                      Video URL (Optional: YouTube, Vimeo, or MP4 link)
-                    </label>
-                    <input
-                      type="url"
-                      value={videoUrl}
-                      onChange={(e) => setVideoUrl(e.target.value)}
-                      placeholder="https://youtu.be/..."
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40 font-mono"
-                    />
+                {/* Video Link & Estimated Duration (for Lectures & Video Tests) */}
+                {(curriculumMode === "LECTURE" || (curriculumMode === "TEST" && testType === "VIDEO_TEST")) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        Video URL (Optional: YouTube, Vimeo, or MP4 link)
+                      </label>
+                      <input
+                        type="url"
+                        value={videoUrl}
+                        onChange={(e) => setVideoUrl(e.target.value)}
+                        placeholder="https://youtu.be/..."
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        Duration (Minutes)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={durationMinutes}
+                        onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40 font-mono"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                      Duration (Minutes)
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={durationMinutes}
-                      onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40 font-mono"
-                    />
-                  </div>
-                </div>
+                )}
               </div>
 
-              {/* ──────────────── TYPE === NOTES ──────────────── */}
-              {lessonType === "READING" && (
+              {/* ──────────────── MODE: LECTURE ──────────────── */}
+              {curriculumMode === "LECTURE" && (
                 <div className="space-y-6">
                   {/* WYSIWYG Notes Editor */}
                   <div>
@@ -762,8 +1002,8 @@ export default function EditCoursePage() {
                 </div>
               )}
 
-              {/* ──────────────── TYPE === QUIZ ──────────────── */}
-              {lessonType === "QUIZ" && (
+              {/* ──────────────── MODE: PRACTICE (MCQ) ──────────────── */}
+              {curriculumMode === "PRACTICE" && practiceType === "MCQ" && (
                 <div className="space-y-6">
                   {/* Passing Score Box */}
                   <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#070A11]/60">
@@ -772,7 +1012,7 @@ export default function EditCoursePage() {
                         Passing Score Percentage
                       </h4>
                       <p className="text-[11px] text-slate-400">
-                        Score required for students to mark this quiz as completed.
+                        Score required for students to mark this practice quiz as mastered.
                       </p>
                     </div>
                     <div className="flex items-center gap-1 font-mono">
@@ -830,7 +1070,7 @@ export default function EditCoursePage() {
                                 name={`correct-${q.id}`}
                                 checked={q.correctOptionIndex === optIdx}
                                 onChange={() => setCorrectOption(qIdx, optIdx)}
-                                className="text-sky-500 focus:ring-sky-500"
+                                className="text-amber-500 focus:ring-amber-500"
                               />
                               <input
                                 type="text"
@@ -861,7 +1101,7 @@ export default function EditCoursePage() {
 
                     <button
                       onClick={addQuestion}
-                      className="w-full py-3 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-sky-500 dark:hover:border-sky-400 hover:text-sky-500 transition-colors cursor-pointer"
+                      className="w-full py-3 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-amber-500 dark:hover:border-amber-400 hover:text-amber-600 transition-colors cursor-pointer"
                     >
                       + Add Another Question
                     </button>
@@ -869,28 +1109,362 @@ export default function EditCoursePage() {
                 </div>
               )}
 
-              {/* ──────────────── TYPE === ASSIGNMENT ──────────────── */}
-              {lessonType === "ASSIGNMENT" && (
+              {/* ──────────────── MODE: PRACTICE (PROJECT LAB) ──────────────── */}
+              {curriculumMode === "PRACTICE" && practiceType === "PROJECT" && (
                 <div className="space-y-6">
-                  {/* Instructions */}
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300">
+                    <span className="font-bold">Ungraded Practice Lab: </span>
+                    Students can submit repository links or code outputs to test their understanding. No formal mentor grading required.
+                  </div>
+
                   <div className="space-y-1.5">
                     <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-                      Assignment Prompt & Problem Statement
+                      Lab Instructions & Exercise Requirements
                     </label>
                     <textarea
                       rows={8}
                       value={assignmentInstructions}
                       onChange={(e) => setAssignmentInstructions(e.target.value)}
-                      placeholder="Detail the project requirements, architecture specifications, expected outputs, and submission instructions..."
-                      className="w-full p-4 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                      placeholder="Detail the hands-on lab steps, sample dataset, or repository setup instructions..."
+                      className="w-full p-4 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                     />
                   </div>
 
-                  {/* Submission Type & Points */}
+                  <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] space-y-2">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                      Permitted Submission Formats
+                    </span>
+                    <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={allowedTypes.includes("URL") || allowedTypes.includes("GITHUB")}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setAllowedTypes([...allowedTypes.filter((t) => t !== "GITHUB"), "URL"]);
+                            } else {
+                              setAllowedTypes(allowedTypes.filter((t) => t !== "URL" && t !== "GITHUB"));
+                            }
+                          }}
+                          className="rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                        />
+                        <span>GitHub Repository / Live Demo URL</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={allowedTypes.includes("FILE")}
+                          onChange={(e) => {
+                            if (e.target.checked) setAllowedTypes([...allowedTypes, "FILE"]);
+                            else setAllowedTypes(allowedTypes.filter((t) => t !== "FILE"));
+                          }}
+                          className="rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                        />
+                        <span>ZIP Archive Upload</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ──────────────── MODE: TEST (CODING TEST) ──────────────── */}
+              {curriculumMode === "TEST" && testType === "CODING_TEST" && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-indigo-50/40 dark:bg-[#0B1120]">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        Automated Coding Test
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Executed inside the student runner with automated test cases.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={codingLanguage}
+                        onChange={(e) => setCodingLanguage(e.target.value)}
+                        className="text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#070A11] font-mono font-bold text-slate-800 dark:text-slate-100"
+                      >
+                        <option value="python">Python</option>
+                        <option value="typescript">TypeScript</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="cpp">C++</option>
+                        <option value="java">Java</option>
+                        <option value="rust">Rust</option>
+                        <option value="go">Go</option>
+                      </select>
+                      <div className="flex items-center gap-1 font-mono">
+                        <input
+                          type="number"
+                          min={10}
+                          max={500}
+                          value={maxPoints}
+                          onChange={(e) => setMaxPoints(Number(e.target.value))}
+                          className="w-16 px-2 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#070A11] text-center font-bold"
+                        />
+                        <span className="text-xs text-slate-400 font-sans">pts</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Starter Code */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Starter Code / Boilerplate
+                    </label>
+                    <textarea
+                      rows={8}
+                      value={codingStarterCode}
+                      onChange={(e) => setCodingStarterCode(e.target.value)}
+                      placeholder="// Provide starting code signature..."
+                      className="w-full p-4 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-[#070A11] text-emerald-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                    />
+                  </div>
+
+                  {/* Test Cases Manager */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Automated Test Cases ({codingTestCases.length})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={addTestCase}
+                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                      >
+                        + Add Test Case
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {codingTestCases.map((tc, tcIdx) => (
+                        <div
+                          key={tcIdx}
+                          className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] space-y-3 text-xs"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-slate-400 font-bold">
+                              Test Case #{tcIdx + 1}
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                                <input
+                                  type="checkbox"
+                                  checked={tc.isHidden}
+                                  onChange={(e) => updateTestCase(tcIdx, "isHidden", e.target.checked)}
+                                  className="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500"
+                                />
+                                <span>Hidden / Evaluated Only</span>
+                              </label>
+                              {codingTestCases.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeTestCase(tcIdx)}
+                                  className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                                Input Expression / Argument
+                              </label>
+                              <input
+                                type="text"
+                                value={tc.input}
+                                onChange={(e) => updateTestCase(tcIdx, "input", e.target.value)}
+                                placeholder="[1, 2, 3], target = 4"
+                                className="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11]"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                                Expected Output
+                              </label>
+                              <input
+                                type="text"
+                                value={tc.expected}
+                                onChange={(e) => updateTestCase(tcIdx, "expected", e.target.value)}
+                                placeholder="true"
+                                className="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ──────────────── MODE: TEST (SUBJECTIVE TEST) ──────────────── */}
+              {curriculumMode === "TEST" && testType === "SUBJECTIVE_TEST" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-indigo-50/40 dark:bg-[#0B1120]">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        Subjective Evaluation Test
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Students write detailed architectural designs or code analyses for mentor review.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 font-mono">
+                      <input
+                        type="number"
+                        min={10}
+                        max={500}
+                        value={maxPoints}
+                        onChange={(e) => setMaxPoints(Number(e.target.value))}
+                        className="w-16 px-2 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#070A11] text-center font-bold"
+                      />
+                      <span className="text-xs text-slate-400 font-sans">pts</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Subjective Prompt & Question Statement
+                    </label>
+                    <textarea
+                      rows={6}
+                      value={subjectivePrompt}
+                      onChange={(e) => setSubjectivePrompt(e.target.value)}
+                      placeholder="Outline the architectural scenario, constraints, and questions the student must answer..."
+                      className="w-full p-4 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Mentor Evaluation Rubric & Grading Breakdown
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={subjectiveRubric}
+                      onChange={(e) => setSubjectiveRubric(e.target.value)}
+                      placeholder="Criteria 1 (10 pts): Architectural correctness&#10;Criteria 2 (10 pts): Edge-case resilience&#10;Criteria 3 (10 pts): Performance profiling"
+                      className="w-full p-4 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ──────────────── MODE: TEST (VIDEO VIVA TEST) ──────────────── */}
+              {curriculumMode === "TEST" && testType === "VIDEO_TEST" && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-purple-50/40 dark:bg-[#0B1120]">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        Video Viva / Presentation Test
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Students record a live video walkthrough or screen share explaining their architecture.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-[11px] text-slate-500">Max:</span>
+                        <input
+                          type="number"
+                          min={30}
+                          max={600}
+                          step={30}
+                          value={videoDurationLimitSec}
+                          onChange={(e) => setVideoDurationLimitSec(Number(e.target.value))}
+                          className="w-16 px-2 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#070A11] text-center font-bold"
+                        />
+                        <span className="text-xs text-slate-400">sec</span>
+                      </div>
+                      <div className="flex items-center gap-1 font-mono">
+                        <input
+                          type="number"
+                          min={10}
+                          max={500}
+                          value={maxPoints}
+                          onChange={(e) => setMaxPoints(Number(e.target.value))}
+                          className="w-16 px-2 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#070A11] text-center font-bold"
+                        />
+                        <span className="text-xs text-slate-400 font-sans">pts</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Viva Walkthrough Prompt & Topics
+                    </label>
+                    <textarea
+                      rows={6}
+                      value={videoPrompt}
+                      onChange={(e) => setVideoPrompt(e.target.value)}
+                      placeholder="Prompt students to record their camera and explain their codebase trade-offs..."
+                      className="w-full p-4 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Viva Evaluation Rubrics & Criteria
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={subjectiveRubric}
+                      onChange={(e) => setSubjectiveRubric(e.target.value)}
+                      placeholder="1. Technical depth and clarity of communication&#10;2. Architecture walkthrough reasoning&#10;3. Demonstration of working deliverables"
+                      className="w-full p-4 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ──────────────── MODE: TEST (CAPSTONE PROJECT) ──────────────── */}
+              {curriculumMode === "TEST" && testType === "PROJECT" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-indigo-50/40 dark:bg-[#0B1120]">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        Evaluated Capstone Project
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Formal end-of-module capstone assessed by lead mentors.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 font-mono">
+                      <input
+                        type="number"
+                        min={10}
+                        max={1000}
+                        value={maxPoints}
+                        onChange={(e) => setMaxPoints(Number(e.target.value))}
+                        className="w-20 px-2.5 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#070A11] text-center font-bold"
+                      />
+                      <span className="text-xs text-slate-400 font-sans">pts</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Capstone Project Specification & Deliverables
+                    </label>
+                    <textarea
+                      rows={8}
+                      value={assignmentInstructions}
+                      onChange={(e) => setAssignmentInstructions(e.target.value)}
+                      placeholder="Detail the complete fullstack/AI capstone deliverable, API requirements, and test suites..."
+                      className="w-full p-4 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] space-y-2">
                       <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                        Allowed Submissions
+                        Submission Requirements
                       </span>
                       <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
                         <label className="flex items-center gap-2 cursor-pointer">
@@ -904,9 +1478,9 @@ export default function EditCoursePage() {
                                 setAllowedTypes(allowedTypes.filter((t) => t !== "URL" && t !== "GITHUB"));
                               }
                             }}
-                            className="rounded border-slate-300 text-sky-500 focus:ring-sky-500"
+                            className="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500"
                           />
-                          <span>URLs / GitHub Repositories</span>
+                          <span>GitHub Repo & Live URL</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -916,40 +1490,24 @@ export default function EditCoursePage() {
                               if (e.target.checked) setAllowedTypes([...allowedTypes, "FILE"]);
                               else setAllowedTypes(allowedTypes.filter((t) => t !== "FILE"));
                             }}
-                            className="rounded border-slate-300 text-sky-500 focus:ring-sky-500"
+                            className="rounded border-slate-300 text-indigo-500 focus:ring-indigo-500"
                           />
-                          <span>File / Project ZIP Upload</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={allowedTypes.includes("TEXT")}
-                            onChange={(e) => {
-                              if (e.target.checked) setAllowedTypes([...allowedTypes, "TEXT"]);
-                              else setAllowedTypes(allowedTypes.filter((t) => t !== "TEXT"));
-                            }}
-                            className="rounded border-slate-300 text-sky-500 focus:ring-sky-500"
-                          />
-                          <span>Text Writeup</span>
+                          <span>ZIP Deliverable</span>
                         </label>
                       </div>
                     </div>
 
                     <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] space-y-2">
                       <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                        Maximum Score
+                        Evaluation Rubric
                       </span>
-                      <input
-                        type="number"
-                        min={10}
-                        max={1000}
-                        value={maxPoints}
-                        onChange={(e) => setMaxPoints(Number(e.target.value))}
-                        className="w-24 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100"
+                      <textarea
+                        rows={4}
+                        value={subjectiveRubric}
+                        onChange={(e) => setSubjectiveRubric(e.target.value)}
+                        placeholder="Mentor grading rubrics..."
+                        className="w-full p-2.5 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11]"
                       />
-                      <p className="text-[11px] text-slate-400">
-                        Default grading points for mentor assessment.
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -965,6 +1523,7 @@ export default function EditCoursePage() {
 // ──────────────── SUBCOMPONENT: Chapter Section with Lessons ────────────────
 interface ChapterSectionProps {
   moduleId: string;
+  moduleTitle?: string;
   position: number;
   activeLessonId: string | null;
   onSelectLesson: (id: string) => void;
@@ -977,6 +1536,7 @@ interface ChapterSectionProps {
 
 function ChapterSection({
   moduleId,
+  moduleTitle,
   position,
   activeLessonId,
   onSelectLesson,
@@ -986,8 +1546,52 @@ function ChapterSection({
   setNewLessonTitle,
   onAddLesson,
 }: ChapterSectionProps) {
-  const { data: moduleLessons = [], refetch } = useGetAdminModuleLessonsQuery(moduleId);
+  const { data: moduleLessons = [] } = useGetAdminModuleLessonsQuery(moduleId);
   const [collapsed, setCollapsed] = useState(false);
+
+  const getLessonBadge = (les: any) => {
+    if (les.videoUrl) {
+      return {
+        label: "Video",
+        bg: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20",
+      };
+    }
+    const text = `${les.title || ""} ${les.slug || ""} ${les.lessonId || ""}`.toLowerCase();
+    if (text.includes("quiz") || text.includes("mcq")) {
+      return {
+        label: "MCQ",
+        bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+      };
+    }
+    if (text.includes("coding") || text.includes("code")) {
+      return {
+        label: "Coding",
+        bg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20",
+      };
+    }
+    if (text.includes("viva") || text.includes("video")) {
+      return {
+        label: "Viva",
+        bg: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
+      };
+    }
+    if (text.includes("subjective") || text.includes("theory")) {
+      return {
+        label: "Subjective",
+        bg: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20",
+      };
+    }
+    if (text.includes("project") || text.includes("lab") || text.includes("capstone")) {
+      return {
+        label: "Project",
+        bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+      };
+    }
+    return {
+      label: "Lesson",
+      bg: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60",
+    };
+  };
 
   return (
     <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] overflow-hidden shadow-2xs">
@@ -1003,7 +1607,7 @@ function ChapterSection({
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
           )}
           <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-            Chapter {position}
+            Chapter {position}{moduleTitle ? ` — ${moduleTitle}` : ""}
           </span>
         </button>
 
@@ -1025,28 +1629,26 @@ function ChapterSection({
           ) : (
             moduleLessons.map((les: any) => {
               const isSelected = activeLessonId === les.lessonId;
+              const badge = getLessonBadge(les);
+              const displayTitle = les.title && les.title.trim().length > 0 ? les.title : les.lessonId;
               return (
                 <button
                   key={les.lessonId}
                   onClick={() => onSelectLesson(les.lessonId)}
-                  className={`w-full text-left p-2 rounded-xl transition-all flex items-center justify-between gap-2 cursor-pointer ${
+                  className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between gap-2 cursor-pointer ${
                     isSelected
                       ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold border border-sky-500/30 shadow-2xs"
                       : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   }`}
                 >
                   <span className="text-xs font-semibold truncate flex-1">
-                    {les.lessonId}
+                    {displayTitle}
                   </span>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <span
-                      className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full ${
-                        isSelected
-                          ? "bg-sky-500/20 text-sky-700 dark:text-sky-300"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-                      }`}
+                      className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded-full ${badge.bg}`}
                     >
-                      Lesson
+                      {badge.label}
                     </span>
                   </div>
                 </button>

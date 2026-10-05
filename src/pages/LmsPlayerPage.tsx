@@ -100,43 +100,107 @@ export default function LmsPlayerPage() {
           title: m.title || `Week ${idx + 1}`,
           meta: `${backendLessons.filter((l: any) => l.contentType !== "QUIZ" && l.contentType !== "ASSIGNMENT").length || 3} Videos · ${backendLessons.filter((l: any) => l.contentType === "QUIZ" || l.contentType === "ASSIGNMENT").length || 2} Assessments`,
           items: backendLessons.map((l: any, lIdx: number) => {
-            const isQuiz = l.contentType === "QUIZ" || l.id?.includes("_quiz");
-            const isAssignment = l.contentType === "ASSIGNMENT" || l.id?.includes("_lab") || l.id?.includes("_cap");
-            
-            // Try parse quiz questions if in content
-            let parsedQuestions: QuizQuestion[] | undefined;
-            let parsedInstructions = l.description || l.content;
-            if (isQuiz && l.content) {
+            // Try parse structured json content if available
+            let parsedContent: any = null;
+            if (l.content && typeof l.content === "string" && l.content.startsWith("{")) {
               try {
-                const parsed = JSON.parse(l.content);
-                if (parsed.questions) parsedQuestions = parsed.questions;
+                parsedContent = JSON.parse(l.content);
               } catch {
-                // Not JSON
-              }
-            }
-            if (isAssignment && l.content) {
-              try {
-                const parsed = JSON.parse(l.content);
-                if (parsed.instructions) parsedInstructions = parsed.instructions;
-              } catch {
-                // Not JSON
+                parsedContent = null;
               }
             }
 
+            const cType = (l.contentType || parsedContent?.type || "").toUpperCase();
+            const curMode = (l.curriculumMode || parsedContent?.curriculumMode || "").toUpperCase();
+            const pracType = (l.practiceType || parsedContent?.practiceType || "").toUpperCase();
+            const testType = (l.testType || parsedContent?.testType || "").toUpperCase();
+
+            const isCoding =
+              cType === "CODING_TEST" ||
+              testType === "CODING_TEST" ||
+              l.id?.includes("_code");
+            const isVideoTest =
+              cType === "VIDEO_TEST" ||
+              testType === "VIDEO_TEST" ||
+              l.id?.includes("_viva");
+            const isSubjective =
+              cType === "SUBJECTIVE_TEST" ||
+              testType === "SUBJECTIVE_TEST" ||
+              l.id?.includes("_sub");
+            const isQuiz =
+              !isCoding &&
+              !isVideoTest &&
+              !isSubjective &&
+              (cType === "QUIZ" || pracType === "MCQ" || l.id?.includes("_quiz"));
+            const isAssignment =
+              !isCoding &&
+              !isVideoTest &&
+              !isSubjective &&
+              !isQuiz &&
+              (cType === "ASSIGNMENT" || pracType === "PROJECT" || testType === "PROJECT" || l.id?.includes("_lab") || l.id?.includes("_cap"));
+
+            // Questions
+            const parsedQuestions: QuizQuestion[] | undefined =
+              l.questions ||
+              parsedContent?.quiz?.questions ||
+              parsedContent?.questions;
+
+            // Instructions / Description
+            const parsedInstructions =
+              l.instructions ||
+              parsedContent?.assignment?.instructions ||
+              parsedContent?.instructions ||
+              l.description ||
+              l.content;
+
+            const codingConfig = l.codingTest || parsedContent?.codingTest;
+            const subjectiveConfig = l.subjectiveTest || parsedContent?.subjectiveTest;
+            const videoConfig = l.videoTest || parsedContent?.videoTest;
+            const maxScore =
+              codingConfig?.maxScore ||
+              subjectiveConfig?.maxScore ||
+              videoConfig?.maxScore ||
+              l.assignment?.maxPoints ||
+              parsedContent?.assignment?.maxPoints ||
+              100;
+
             const fallbackMod = canonical.modules[idx];
             const fallbackItem = fallbackMod?.items?.find(
-              (fi) => fi.type === (isQuiz ? "quiz" : isAssignment ? "assignment" : "video")
+              (fi) => fi.type === (isQuiz ? "quiz" : isAssignment ? "assignment" : isCoding ? "coding_test" : "video")
             );
+
+            const resolvedType = isCoding
+              ? ("coding_test" as const)
+              : isVideoTest
+              ? ("video_test" as const)
+              : isSubjective
+              ? ("subjective_test" as const)
+              : isQuiz
+              ? ("quiz" as const)
+              : isAssignment
+              ? ("assignment" as const)
+              : ("video" as const);
 
             return {
               id: l.id || `item-${idx}-${lIdx}`,
               title: l.title || `${idx + 1}.${lIdx + 1} Lesson`,
               duration: l.durationMinutes ? `${l.durationMinutes} Mins` : `${lIdx * 3 + 12} Mins`,
-              type: isQuiz ? ("quiz" as const) : isAssignment ? ("assignment" as const) : ("video" as const),
+              type: resolvedType,
+              category: curMode === "TEST" || isCoding || isVideoTest || isSubjective ? "TEST" as const : curMode === "PRACTICE" || isQuiz ? "PRACTICE" as const : "LECTURE" as const,
               videoUrl: l.videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1",
-              description: l.description,
+              description: l.description || parsedContent?.contentMarkdown,
               questions: parsedQuestions || fallbackItem?.questions,
               instructions: parsedInstructions || fallbackItem?.instructions,
+              maxScore,
+              config: {
+                starterCode: codingConfig?.starterCode,
+                language: codingConfig?.language || "python",
+                testCases: codingConfig?.testCases,
+                prompt: subjectiveConfig?.prompt || videoConfig?.prompt || parsedInstructions,
+                rubrics: subjectiveConfig?.rubrics || videoConfig?.rubrics,
+                maxDurationSec: videoConfig?.maxDurationSec,
+                maxScore,
+              },
             };
           }),
         };

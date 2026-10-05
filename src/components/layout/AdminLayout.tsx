@@ -30,22 +30,50 @@ export default function AdminLayout() {
     navigate("/login");
   };
 
+  const userRole = (user?.role || "").toUpperCase();
+  const metaRoles: string[] = Array.isArray(user?.metadata?.roles)
+    ? user.metadata.roles.map((r: string) => String(r).toUpperCase())
+    : [];
+  const allRoles = [userRole, ...metaRoles];
+
+  const isSuperAdmin = allRoles.includes("SUPER_ADMIN");
+  const isAdmin = isSuperAdmin || allRoles.includes("ADMIN");
+  const isMentor = isAdmin || allRoles.includes("MENTOR");
+  const isProgramManager =
+    isAdmin ||
+    allRoles.includes("PROGRAM_MANAGER") ||
+    allRoles.includes("MEMBER") ||
+    allRoles.includes("COURSE_AUTHOR") ||
+    (!allRoles.includes("MENTOR") && allRoles.length <= 1); // default author if not explicitly mentor-only
+
+  const hasBoth = isMentor && isProgramManager;
+
+  // Build nav items dynamically based on roles
   const navItems = [
-    { name: "Dashboard", path: "/admin", icon: LayoutDashboard, badge: "1", end: true },
-    { name: "Courses", path: "/admin/courses", icon: BookOpen, badge: "3" },
-    { name: "Mentorship Cockpit", path: "/admin/submissions", icon: ClipboardCheck },
-    { name: "Media Files", path: "/admin/files", icon: FolderArchive, badge: "1" },
+    ...(isProgramManager
+      ? [{ name: "Dashboard", path: "/admin", icon: LayoutDashboard, badge: "1", end: true }]
+      : []),
+    ...(isProgramManager
+      ? [{ name: "Program Manager", path: "/admin/courses", icon: BookOpen, badge: "Courses" }]
+      : []),
+    ...(isMentor
+      ? [{ name: "Mentors Cockpit", path: "/admin/submissions", icon: ClipboardCheck, badge: "Active" }]
+      : []),
+    ...(isProgramManager
+      ? [{ name: "Media Files", path: "/admin/files", icon: FolderArchive, badge: "1" }]
+      : []),
     { name: "Students", path: "/admin/students", icon: Users },
   ];
 
-  const roleLabel =
-    user?.role === "SUPER_ADMIN"
-      ? "Super Admin"
-      : user?.role === "ADMIN"
-      ? "Admin"
-      : user?.role === "MENTOR"
-      ? "Lead Mentor"
-      : "Course Author";
+  const roleLabel = isSuperAdmin
+    ? "Super Admin"
+    : isAdmin
+    ? "Admin"
+    : hasBoth
+    ? "Program Mgr & Mentor"
+    : isMentor
+    ? "Lead Mentor"
+    : "Program Manager";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#070A11] text-slate-800 dark:text-slate-100 flex flex-col md:flex-row antialiased">
