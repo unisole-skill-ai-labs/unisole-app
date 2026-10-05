@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
   LayoutGrid,
@@ -14,12 +14,6 @@ import {
   Moon,
   Menu,
   X,
-  Search,
-  Bell,
-  ChevronDown,
-  Settings,
-  MoreVertical,
-  CheckCircle,
 } from "lucide-react";
 import { logout } from "../../store/authSlice";
 import { useTheme } from "../../context/ThemeContext";
@@ -28,10 +22,8 @@ export default function AdminLayout() {
   const { user } = useSelector((state: any) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const handleLogout = () => {
     dispatch(logout());
@@ -45,15 +37,6 @@ export default function AdminLayout() {
     { name: "Media Files", path: "/admin/files", icon: FolderArchive, badge: "1" },
     { name: "Students", path: "/admin/students", icon: Users },
   ];
-
-  const topTabs = [
-    { name: "Dashboard", path: "/admin", end: true },
-    { name: "Courses", path: "/admin/courses" },
-    { name: "Mentorship", path: "/admin/submissions" },
-    { name: "Files", path: "/admin/files" },
-    { name: "Students", path: "/admin/students" },
-  ];
-
 
   const roleLabel =
     user?.role === "SUPER_ADMIN"
@@ -187,7 +170,7 @@ export default function AdminLayout() {
             </div>
             <button
               onClick={handleLogout}
-              className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
               title="Sign Out"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -196,72 +179,10 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        {/* Top Header Bar (Constructive Style) */}
-        <header className="sticky top-0 z-20 bg-white/90 dark:bg-[#0B1120]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-6 py-3.5 flex items-center justify-between gap-4">
-          {/* Search bar */}
-          <div className="relative w-full max-w-xs sm:max-w-sm">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search courses, modules, submissions..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#070A11] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40 focus:border-sky-500 transition-all"
-            />
-          </div>
-
-          {/* Center Navigation Tabs (Constructive Header Style) */}
-          <nav className="hidden lg:flex items-center gap-6">
-            {topTabs.map((tab) => {
-              const isActive = tab.end
-                ? location.pathname === tab.path
-                : location.pathname.startsWith(tab.path);
-              return (
-                <Link
-                  key={tab.path}
-                  to={tab.path}
-                  className={`text-xs font-bold relative py-1 transition-colors ${
-                    isActive
-                      ? "text-sky-600 dark:text-sky-400"
-                      : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
-                >
-                  {tab.name}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500 rounded-full" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Right Profile & Notifications */}
-          <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-sky-500 ring-2 ring-white dark:ring-[#0B1120]" />
-            </button>
-
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                alt="Avatar"
-                className="w-8 h-8 rounded-full object-cover ring-2 ring-sky-500/30"
-              />
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-100 hidden sm:inline">
-                {user?.name || "Alesia K."}
-              </span>
-            </div>
-          </div>
-        </header>
-
-        {/* Content View */}
-        <main className="flex-1 overflow-y-auto">
-          <Outlet />
-        </main>
-      </div>
+      {/* Main Content Area (Clean Workspace without redundant top header) */}
+      <main className="flex-1 min-w-0 min-h-screen overflow-y-auto">
+        <Outlet />
+      </main>
     </div>
   );
 }
