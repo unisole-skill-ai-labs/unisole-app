@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   ArrowRight,
@@ -75,6 +76,10 @@ import {
 export default function LmsPlayerPage() {
   const { pathwayId } = useParams();
   const navigate = useNavigate();
+
+  const { user } = useSelector((state: any) => state.auth || {});
+  const userRole = user?.role ? String(user.role).toUpperCase() : "";
+  const canManageCourse = ["ADMIN", "SUPER_ADMIN", "PROGRAM_MANAGER", "MENTOR", "MEMBER"].includes(userRole);
 
   // Active canonical curriculum fallback
   const canonical = useMemo(() => getCurriculum(pathwayId), [pathwayId]);
@@ -631,7 +636,7 @@ export default function LmsPlayerPage() {
                 </button>
               </div>
 
-              {overviewTab === "learning" && (
+              {canManageCourse && overviewTab === "learning" && (
                 <button
                   onClick={() => setIsAuthorMode(!isAuthorMode)}
                   className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
@@ -651,7 +656,7 @@ export default function LmsPlayerPage() {
           <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-6">
             {overviewTab === "learning" && (
               <div className="space-y-3.5">
-                {isAuthorMode && (
+                {canManageCourse && isAuthorMode && (
                   <div className="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-between text-xs text-sky-300 font-semibold mb-3">
                     <span>Course Manager Studio Active: Add lectures, practice quizzes, or evaluation tests.</span>
                     <button
@@ -703,40 +708,44 @@ export default function LmsPlayerPage() {
                 <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-slate-200 dark:border-slate-800">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {mentorMode === "mentor" ? "Mentor Operations Cockpit" : "Cohort Mentorship Hub"}
+                      {canManageCourse && mentorMode === "mentor"
+                        ? "Mentor Operations Cockpit"
+                        : "Cohort Mentorship Hub"}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {mentorMode === "mentor"
+                      {canManageCourse && mentorMode === "mentor"
                         ? "Review mentee submissions, track milestone diamonds, and grade code."
                         : "Connect with your assigned mentor and collaborate with batch peers."}
                     </p>
                   </div>
 
-                  <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
-                    <button
-                      onClick={() => setMentorMode("student")}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        mentorMode === "student"
-                          ? "bg-white dark:bg-slate-800 text-sky-500 shadow-sm"
-                          : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                      }`}
-                    >
-                      Learner View
-                    </button>
-                    <button
-                      onClick={() => setMentorMode("mentor")}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        mentorMode === "mentor"
-                          ? "bg-white dark:bg-slate-800 text-sky-500 shadow-sm"
-                          : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                      }`}
-                    >
-                      Mentor View
-                    </button>
-                  </div>
+                  {canManageCourse && (
+                    <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                      <button
+                        onClick={() => setMentorMode("student")}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                          mentorMode === "student"
+                            ? "bg-white dark:bg-slate-800 text-sky-500 shadow-sm"
+                            : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        Learner View
+                      </button>
+                      <button
+                        onClick={() => setMentorMode("mentor")}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                          mentorMode === "mentor"
+                            ? "bg-white dark:bg-slate-800 text-sky-500 shadow-sm"
+                            : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        Mentor View
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {mentorMode === "mentor" ? (
+                {canManageCourse && mentorMode === "mentor" ? (
                   <MentorCockpitView
                     mentees={mentorCockpitData?.mentees || []}
                     milestones={
