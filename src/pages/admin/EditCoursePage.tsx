@@ -360,26 +360,26 @@ export default function EditCoursePage() {
 
   if (isCourseLoading) {
     return (
-      <div className="p-10 text-center text-xs text-zinc-400">
+      <div className="p-16 text-center text-xs text-slate-400">
         Loading course editor...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#070A11] text-slate-800 dark:text-slate-100 font-sans">
       {/* Top Bar */}
-      <div className="h-14 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 md:px-6 flex items-center justify-between sticky top-0 z-30">
+      <div className="h-14 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-md px-4 md:px-6 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <Link
             to="/admin/courses"
-            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-zinc-400">Course /</span>
-            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-xs">
+            <span className="text-xs font-semibold text-slate-400">Curriculum /</span>
+            <span className="text-xs font-extrabold text-slate-900 dark:text-white truncate max-w-xs sm:max-w-md">
               {course?.title || "Untitled Course"}
             </span>
           </div>
@@ -390,21 +390,21 @@ export default function EditCoursePage() {
           {activeLessonId && saveStatus !== "idle" && (
             <div className="flex items-center gap-1.5 text-xs font-medium transition-all duration-200">
               {saveStatus === "saving" && (
-                <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" />
-                  <span>Saving...</span>
+                <span className="text-slate-400 flex items-center gap-1.5 text-[11px]">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" />
+                  <span>Autosaving...</span>
                 </span>
               )}
               {saveStatus === "saved" && (
-                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5" />
+                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 text-[11px] font-semibold">
+                  <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>Saved</span>
                 </span>
               )}
               {saveStatus === "error" && (
-                <span className="text-red-500 flex items-center gap-1">
+                <span className="text-rose-500 flex items-center gap-1 text-[11px] font-semibold">
                   <AlertCircle className="w-3.5 h-3.5" />
-                  <span>Save failed</span>
+                  <span>Save error</span>
                 </span>
               )}
             </div>
@@ -414,8 +414,8 @@ export default function EditCoursePage() {
           {activeLessonId && (
             <button
               onClick={forceSave}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-800"
-              title="Save changes (Ctrl+S)"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors border border-slate-200/80 dark:border-slate-800/80 cursor-pointer"
+              title="Save changes"
             >
               <Save className="w-3.5 h-3.5" />
               <span>Save</span>
@@ -425,9 +425,9 @@ export default function EditCoursePage() {
           {/* Student View Link */}
           <Link
             to="/enrolled"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-xl transition-all shadow-xs cursor-pointer"
           >
-            <Eye className="w-3.5 h-3.5" />
+            <Eye className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Student View</span>
           </Link>
         </div>
@@ -436,57 +436,57 @@ export default function EditCoursePage() {
       {/* Main Split-Screen Workspace */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left Column (30%): Chapters & Lessons Outline */}
-        <div className="w-full md:w-80 lg:w-96 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 flex flex-col md:h-[calc(100vh-56px)] overflow-y-auto">
-          <div className="p-4 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+        <div className="w-full md:w-80 lg:w-96 border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] flex flex-col md:h-[calc(100vh-56px)] overflow-y-auto">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Chapters & Lessons
             </span>
             <button
               onClick={() => setShowAddChapter(true)}
-              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-lg transition-colors cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>Add Chapter</span>
             </button>
           </div>
 
           {/* Inline Add Chapter Form */}
           {showAddChapter && (
-            <form onSubmit={handleAddChapter} className="p-3 bg-zinc-50 dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 space-y-2">
+            <form onSubmit={handleAddChapter} className="p-3 bg-slate-50 dark:bg-[#070A11] border-b border-slate-200/80 dark:border-slate-800/80 space-y-2">
               <input
                 type="text"
                 autoFocus
                 placeholder="Chapter title..."
                 value={newChapterTitle}
                 onChange={(e) => setNewChapterTitle(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-800"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] focus:outline-none focus:ring-2 focus:ring-sky-500/40"
               />
               <div className="flex items-center justify-end gap-1.5">
                 <button
                   type="button"
                   onClick={() => setShowAddChapter(false)}
-                  className="px-2 py-1 text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                  className="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-2.5 py-1 text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 rounded"
+                  className="px-3 py-1 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-lg shadow-xs cursor-pointer"
                 >
-                  Add
+                  Add Chapter
                 </button>
               </div>
             </form>
           )}
 
           {/* Chapters & Lessons Tree */}
-          <div className="p-3 space-y-4 flex-1">
+          <div className="p-3 space-y-3 flex-1">
             {courseModules.length === 0 ? (
-              <div className="py-12 text-center text-xs text-zinc-400 space-y-2">
+              <div className="py-12 text-center text-xs text-slate-400 space-y-2">
                 <p>No chapters in this course yet.</p>
                 <button
                   onClick={() => setShowAddChapter(true)}
-                  className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                  className="text-sky-600 dark:text-sky-400 font-bold hover:underline cursor-pointer"
                 >
                   + Add First Chapter
                 </button>
@@ -511,52 +511,52 @@ export default function EditCoursePage() {
         </div>
 
         {/* Right Column (70%): Lesson Editor */}
-        <div className="flex-1 flex flex-col bg-white dark:bg-zinc-950 md:h-[calc(100vh-56px)] overflow-y-auto">
+        <div className="flex-1 flex flex-col bg-[#F8FAFC] dark:bg-[#070A11] md:h-[calc(100vh-56px)] overflow-y-auto p-4 sm:p-6 lg:p-8">
           {!activeLessonId ? (
             <div className="m-auto text-center p-8 max-w-sm space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-400 mx-auto">
-                <FileCode className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-500 flex items-center justify-center mx-auto border border-sky-500/20">
+                <FileCode className="w-6 h-6 stroke-[2]" />
               </div>
-              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
                 Select a lesson to edit
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-xs text-slate-400 leading-relaxed">
                 Choose any lesson from the outline on the left, or add a new lesson to start writing notes, creating quizzes, or setting assignments.
               </p>
             </div>
           ) : (
-            <div className="p-6 md:p-8 max-w-4xl mx-auto w-full space-y-6 animate-fade-in">
+            <div className="max-w-4xl mx-auto w-full bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200/80 dark:border-slate-800/80 p-6 sm:p-8 shadow-2xs space-y-6 animate-fade-in">
               {/* Lesson Details Header */}
-              <div className="space-y-4 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+              <div className="space-y-4 pb-6 border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  {/* Type Selector (No Emojis) */}
-                  <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 self-start">
+                  {/* Type Selector */}
+                  <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-[#070A11] p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 self-start">
                     <button
                       onClick={() => setLessonType("READING")}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                         lessonType === "READING"
-                          ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                          : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                          ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                       }`}
                     >
                       Notes
                     </button>
                     <button
                       onClick={() => setLessonType("QUIZ")}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                         lessonType === "QUIZ"
-                          ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                          : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                          ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                       }`}
                     >
                       Quiz
                     </button>
                     <button
                       onClick={() => setLessonType("ASSIGNMENT")}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                         lessonType === "ASSIGNMENT"
-                          ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                          : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                          ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                       }`}
                     >
                       Assignment
@@ -565,30 +565,28 @@ export default function EditCoursePage() {
 
                   {/* Status & Free Preview Controls */}
                   <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300">
                       <input
                         type="checkbox"
                         checked={isFreePreview}
                         onChange={(e) => setIsFreePreview(e.target.checked)}
-                        className="rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                        className="rounded border-slate-300 text-sky-500 focus:ring-sky-500"
                       />
                       <span>Free Preview</span>
                     </label>
 
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() =>
-                          setLessonStatus(lessonStatus === "PUBLISHED" ? "DRAFT" : "PUBLISHED")
-                        }
-                        className={`text-xs font-semibold font-mono px-3 py-1 rounded-lg border transition-colors ${
-                          lessonStatus === "PUBLISHED"
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-                            : "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-                        }`}
-                      >
-                        {lessonStatus === "PUBLISHED" ? "Published" : "Draft"}
-                      </button>
-                    </div>
+                    <button
+                      onClick={() =>
+                        setLessonStatus(lessonStatus === "PUBLISHED" ? "DRAFT" : "PUBLISHED")
+                      }
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
+                        lessonStatus === "PUBLISHED"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                      }`}
+                    >
+                      {lessonStatus === "PUBLISHED" ? "Published" : "Draft"}
+                    </button>
                   </div>
                 </div>
 
@@ -599,26 +597,26 @@ export default function EditCoursePage() {
                     value={lessonTitle}
                     onChange={(e) => setLessonTitle(e.target.value)}
                     placeholder="Lesson Title..."
-                    className="w-full text-xl sm:text-2xl font-bold bg-transparent border-0 border-b border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 focus:border-indigo-600 dark:focus:border-indigo-400 focus:outline-none px-0 py-1 transition-colors"
+                    className="w-full text-xl sm:text-2xl font-black bg-transparent border-0 border-b border-transparent hover:border-slate-200 dark:hover:border-slate-800 focus:border-sky-500 dark:focus:border-sky-400 focus:outline-none px-0 py-1 transition-colors text-slate-900 dark:text-white"
                   />
                 </div>
 
-                {/* Optional Video Link & Estimated Duration */}
+                {/* Video Link & Estimated Duration */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
-                      Video URL (Optional: YouTube Unlisted, Vimeo, or MP4 link)
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                      Video URL (Optional: YouTube, Vimeo, or MP4 link)
                     </label>
                     <input
                       type="url"
                       value={videoUrl}
                       onChange={(e) => setVideoUrl(e.target.value)}
                       placeholder="https://youtu.be/..."
-                      className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-700"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40 font-mono"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
                       Duration (Minutes)
                     </label>
                     <input
@@ -626,7 +624,7 @@ export default function EditCoursePage() {
                       min={1}
                       value={durationMinutes}
                       onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                      className="w-full px-3 py-1.5 text-xs rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-700"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40 font-mono"
                     />
                   </div>
                 </div>
@@ -635,9 +633,9 @@ export default function EditCoursePage() {
               {/* ──────────────── TYPE === NOTES ──────────────── */}
               {lessonType === "READING" && (
                 <div className="space-y-6">
-                  {/* Visual WYSIWYG Notes Editor */}
+                  {/* WYSIWYG Notes Editor */}
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
                       Lesson Notes & Explanation
                     </label>
                     <RichEditor
@@ -651,15 +649,15 @@ export default function EditCoursePage() {
                   </div>
 
                   {/* Code Box with Language Selector */}
-                  <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40 space-y-3">
+                  <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#070A11]/60 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                         Code Example (Optional)
                       </span>
                       <select
                         value={codeLanguage}
                         onChange={(e) => setCodeLanguage(e.target.value)}
-                        className="text-xs px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono"
+                        className="text-xs px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B1120] font-mono text-slate-700 dark:text-slate-200"
                       >
                         <option value="typescript">TypeScript</option>
                         <option value="python">Python</option>
@@ -674,51 +672,51 @@ export default function EditCoursePage() {
                       value={codeSnippet}
                       onChange={(e) => setCodeSnippet(e.target.value)}
                       placeholder={`// Paste sample ${codeLanguage} code here...`}
-                      className="w-full p-3 text-xs font-mono rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-950 text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-600"
+                      className="w-full p-3 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-[#070A11] text-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                     />
                   </div>
 
                   {/* Attachments Section */}
-                  <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-3">
+                  <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                        <Paperclip className="w-3.5 h-3.5 text-zinc-500" />
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <Paperclip className="w-3.5 h-3.5 text-slate-400" />
                         Files & Downloadable Resources
                       </span>
                       <button
                         onClick={() => setShowAddAttachment(!showAddAttachment)}
-                        className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                        className="text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
                       >
                         + Add File Link
                       </button>
                     </div>
 
                     {showAddAttachment && (
-                      <div className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 space-y-2">
+                      <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] space-y-2">
                         <input
                           type="text"
                           placeholder="File name (e.g. Module 1 Slides.pdf)"
                           value={newAttachmentName}
                           onChange={(e) => setNewAttachmentName(e.target.value)}
-                          className="w-full px-2.5 py-1.5 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B1120]"
                         />
                         <input
                           type="url"
                           placeholder="Public file URL (PDF, GitHub repo, Google Drive, ZIP)"
                           value={newAttachmentUrl}
                           onChange={(e) => setNewAttachmentUrl(e.target.value)}
-                          className="w-full px-2.5 py-1.5 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B1120] font-mono"
                         />
                         <div className="flex justify-end gap-2 pt-1">
                           <button
                             onClick={() => setShowAddAttachment(false)}
-                            className="px-2.5 py-1 text-xs text-zinc-500"
+                            className="px-3 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={handleAddAttachment}
-                            className="px-3 py-1 text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 rounded"
+                            className="px-3.5 py-1 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-lg shadow-xs cursor-pointer"
                           >
                             Attach File
                           </button>
@@ -727,7 +725,7 @@ export default function EditCoursePage() {
                     )}
 
                     {attachments.length === 0 ? (
-                      <div className="text-xs text-zinc-400 py-1">
+                      <div className="text-xs text-slate-400 py-1">
                         No supplementary files attached.
                       </div>
                     ) : (
@@ -735,9 +733,9 @@ export default function EditCoursePage() {
                         {attachments.map((att) => (
                           <div
                             key={att.id}
-                            className="flex items-center justify-between p-2 rounded border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/30 text-xs"
+                            className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#070A11]/40 text-xs"
                           >
-                            <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
                               {att.name}
                             </span>
                             <div className="flex items-center gap-2">
@@ -745,13 +743,13 @@ export default function EditCoursePage() {
                                 href={att.url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-indigo-600 dark:text-indigo-400 font-mono hover:underline text-[11px]"
+                                className="text-sky-600 dark:text-sky-400 font-mono hover:underline text-[11px]"
                               >
                                 View
                               </a>
                               <button
                                 onClick={() => removeAttachment(att.id)}
-                                className="text-zinc-400 hover:text-red-500 p-1"
+                                className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -768,12 +766,12 @@ export default function EditCoursePage() {
               {lessonType === "QUIZ" && (
                 <div className="space-y-6">
                   {/* Passing Score Box */}
-                  <div className="flex items-center justify-between p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40">
+                  <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#070A11]/60">
                     <div>
-                      <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
                         Passing Score Percentage
                       </h4>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      <p className="text-[11px] text-slate-400">
                         Score required for students to mark this quiz as completed.
                       </p>
                     </div>
@@ -784,9 +782,9 @@ export default function EditCoursePage() {
                         max={100}
                         value={passingScore}
                         onChange={(e) => setPassingScore(Number(e.target.value))}
-                        className="w-16 px-2 py-1 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-center font-bold"
+                        className="w-16 px-2.5 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B1120] text-center font-bold text-slate-900 dark:text-white"
                       />
-                      <span className="text-xs text-zinc-500">%</span>
+                      <span className="text-xs text-slate-400">%</span>
                     </div>
                   </div>
 
@@ -795,16 +793,16 @@ export default function EditCoursePage() {
                     {questions.map((q, qIdx) => (
                       <div
                         key={q.id}
-                        className="p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-4"
+                        className="p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] space-y-4 shadow-2xs"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-zinc-500 font-mono">
+                          <span className="text-xs font-bold text-slate-400 font-mono">
                             Question {qIdx + 1}
                           </span>
                           {questions.length > 1 && (
                             <button
                               onClick={() => removeQuestion(qIdx)}
-                              className="text-zinc-400 hover:text-red-500 p-1 rounded"
+                              className="text-slate-400 hover:text-rose-500 p-1 rounded cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -817,29 +815,29 @@ export default function EditCoursePage() {
                           value={q.question}
                           onChange={(e) => updateQuestionText(qIdx, e.target.value)}
                           placeholder="Type question prompt..."
-                          className="w-full px-3 py-2 text-xs font-medium rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-700"
+                          className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                         />
 
                         {/* 4 Choices */}
                         <div className="space-y-2">
-                          <span className="text-[11px] text-zinc-400 font-medium">
+                          <span className="text-[11px] text-slate-400 font-semibold">
                             Choices (Select the radio button for the correct answer):
                           </span>
                           {q.options.map((opt, optIdx) => (
-                            <div key={optIdx} className="flex items-center gap-2">
+                            <div key={optIdx} className="flex items-center gap-2.5">
                               <input
                                 type="radio"
                                 name={`correct-${q.id}`}
                                 checked={q.correctOptionIndex === optIdx}
                                 onChange={() => setCorrectOption(qIdx, optIdx)}
-                                className="text-indigo-600 focus:ring-indigo-500"
+                                className="text-sky-500 focus:ring-sky-500"
                               />
                               <input
                                 type="text"
                                 value={opt}
                                 onChange={(e) => updateQuestionOption(qIdx, optIdx, e.target.value)}
                                 placeholder={`Option ${optIdx + 1}`}
-                                className="flex-1 px-3 py-1.5 text-xs rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-700"
+                                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                               />
                             </div>
                           ))}
@@ -847,7 +845,7 @@ export default function EditCoursePage() {
 
                         {/* Explanation */}
                         <div>
-                          <label className="block text-[11px] font-medium text-zinc-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-slate-400 mb-1">
                             Explanation (Optional: shown after answering)
                           </label>
                           <textarea
@@ -855,7 +853,7 @@ export default function EditCoursePage() {
                             value={q.explanation || ""}
                             onChange={(e) => updateQuestionExplanation(qIdx, e.target.value)}
                             placeholder="Why is this option correct?"
-                            className="w-full px-3 py-1.5 text-xs rounded border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-700"
+                            className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                           />
                         </div>
                       </div>
@@ -863,7 +861,7 @@ export default function EditCoursePage() {
 
                     <button
                       onClick={addQuestion}
-                      className="w-full py-2.5 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors"
+                      className="w-full py-3 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-sky-500 dark:hover:border-sky-400 hover:text-sky-500 transition-colors cursor-pointer"
                     >
                       + Add Another Question
                     </button>
@@ -875,8 +873,8 @@ export default function EditCoursePage() {
               {lessonType === "ASSIGNMENT" && (
                 <div className="space-y-6">
                   {/* Instructions */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
                       Assignment Prompt & Problem Statement
                     </label>
                     <textarea
@@ -884,17 +882,17 @@ export default function EditCoursePage() {
                       value={assignmentInstructions}
                       onChange={(e) => setAssignmentInstructions(e.target.value)}
                       placeholder="Detail the project requirements, architecture specifications, expected outputs, and submission instructions..."
-                      className="w-full p-4 text-xs font-mono rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-800 dark:focus:ring-zinc-200"
+                      className="w-full p-4 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                     />
                   </div>
 
                   {/* Submission Type & Points */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-2">
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 block">
+                    <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] space-y-2">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
                         Allowed Submissions
                       </span>
-                      <div className="space-y-2 text-xs text-zinc-600 dark:text-zinc-300">
+                      <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
@@ -906,9 +904,9 @@ export default function EditCoursePage() {
                                 setAllowedTypes(allowedTypes.filter((t) => t !== "URL" && t !== "GITHUB"));
                               }
                             }}
-                            className="rounded border-zinc-300 text-indigo-600"
+                            className="rounded border-slate-300 text-sky-500 focus:ring-sky-500"
                           />
-                          <span>URLs</span>
+                          <span>URLs / GitHub Repositories</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -918,7 +916,7 @@ export default function EditCoursePage() {
                               if (e.target.checked) setAllowedTypes([...allowedTypes, "FILE"]);
                               else setAllowedTypes(allowedTypes.filter((t) => t !== "FILE"));
                             }}
-                            className="rounded border-zinc-300 text-indigo-600"
+                            className="rounded border-slate-300 text-sky-500 focus:ring-sky-500"
                           />
                           <span>File / Project ZIP Upload</span>
                         </label>
@@ -930,15 +928,15 @@ export default function EditCoursePage() {
                               if (e.target.checked) setAllowedTypes([...allowedTypes, "TEXT"]);
                               else setAllowedTypes(allowedTypes.filter((t) => t !== "TEXT"));
                             }}
-                            className="rounded border-zinc-300 text-indigo-600"
+                            className="rounded border-slate-300 text-sky-500 focus:ring-sky-500"
                           />
                           <span>Text Writeup</span>
                         </label>
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 space-y-2">
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 block">
+                    <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] space-y-2">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
                         Maximum Score
                       </span>
                       <input
@@ -947,9 +945,9 @@ export default function EditCoursePage() {
                         max={1000}
                         value={maxPoints}
                         onChange={(e) => setMaxPoints(Number(e.target.value))}
-                        className="w-24 px-3 py-1.5 text-xs font-mono font-bold rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100"
+                        className="w-24 px-3 py-1.5 text-xs font-mono font-bold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100"
                       />
-                      <p className="text-[11px] text-zinc-400">
+                      <p className="text-[11px] text-slate-400">
                         Default grading points for mentor assessment.
                       </p>
                     </div>
@@ -992,26 +990,26 @@ function ChapterSection({
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 overflow-hidden">
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] overflow-hidden shadow-2xs">
       {/* Chapter Bar */}
-      <div className="p-3 flex items-center justify-between bg-zinc-100/60 dark:bg-zinc-900/60 border-b border-zinc-200/50 dark:border-zinc-800/50">
+      <div className="p-3 flex items-center justify-between bg-slate-50/70 dark:bg-[#070A11]/60 border-b border-slate-100 dark:border-slate-800/60">
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center gap-2 text-left truncate flex-1"
+          className="flex items-center gap-2 text-left truncate flex-1 cursor-pointer"
         >
           {collapsed ? (
-            <ChevronRight className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
           ) : (
-            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
           )}
-          <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">
+          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
             Chapter {position}
           </span>
         </button>
 
         <button
           onClick={() => setAddingLessonForModuleId(moduleId)}
-          className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline px-1"
+          className="text-[11px] font-bold text-sky-600 dark:text-sky-400 hover:underline px-1.5 py-0.5 rounded cursor-pointer"
         >
           + Lesson
         </button>
@@ -1021,7 +1019,7 @@ function ChapterSection({
         <div className="p-2 space-y-1">
           {/* Lessons List */}
           {moduleLessons.length === 0 ? (
-            <div className="py-3 px-2 text-[11px] text-zinc-400 text-center">
+            <div className="py-3 px-2 text-[11px] text-slate-400 text-center">
               No lessons yet. Click + Lesson to add.
             </div>
           ) : (
@@ -1031,21 +1029,21 @@ function ChapterSection({
                 <button
                   key={les.lessonId}
                   onClick={() => onSelectLesson(les.lessonId)}
-                  className={`w-full text-left p-2 rounded-lg transition-all flex items-center justify-between gap-2 ${
+                  className={`w-full text-left p-2 rounded-xl transition-all flex items-center justify-between gap-2 cursor-pointer ${
                     isSelected
-                      ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm"
-                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"
+                      ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold border border-sky-500/30 shadow-2xs"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   }`}
                 >
-                  <span className="text-xs font-medium truncate flex-1">
+                  <span className="text-xs font-semibold truncate flex-1">
                     {les.lessonId}
                   </span>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <span
-                      className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded ${
+                      className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full ${
                         isSelected
-                          ? "bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800"
-                          : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                          ? "bg-sky-500/20 text-sky-700 dark:text-sky-300"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-500"
                       }`}
                     >
                       Lesson
@@ -1058,25 +1056,25 @@ function ChapterSection({
 
           {/* Inline Add Lesson Input */}
           {addingLessonForModuleId === moduleId && (
-            <div className="p-2 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 space-y-2 mt-1">
+            <div className="p-2.5 bg-slate-50 dark:bg-[#070A11] rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 mt-1">
               <input
                 type="text"
                 autoFocus
                 placeholder="Lesson title..."
                 value={newLessonTitle}
                 onChange={(e) => setNewLessonTitle(e.target.value)}
-                className="w-full px-2 py-1 text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 focus:outline-none"
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B1120] focus:outline-none focus:ring-2 focus:ring-sky-500/40"
               />
               <div className="flex justify-end gap-1.5">
                 <button
                   onClick={() => setAddingLessonForModuleId(null)}
-                  className="px-2 py-0.5 text-xs text-zinc-500"
+                  className="px-2.5 py-1 text-xs text-slate-500 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => onAddLesson(moduleId)}
-                  className="px-2.5 py-0.5 text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 rounded"
+                  className="px-3 py-1 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-lg shadow-xs cursor-pointer"
                 >
                   Create
                 </button>
