@@ -37,6 +37,11 @@ import {
   ArrowUp,
   ArrowDown,
   FolderInput,
+  Folder,
+  FolderPlus,
+  FolderOpen,
+  FileArchive,
+  Download,
   Layers,
   Sparkles,
 } from "lucide-react";
@@ -161,7 +166,7 @@ export default function EditCoursePage() {
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonStatus, setLessonStatus] = useState<ContentStatus>("DRAFT");
   const [isFreePreview, setIsFreePreview] = useState(false);
-  const [curriculumMode, setCurriculumMode] = useState<"LECTURE" | "PRACTICE" | "TEST">("LECTURE");
+  const [curriculumMode, setCurriculumMode] = useState<"LECTURE" | "PRACTICE" | "TEST" | "FOLDER">("LECTURE");
   const [practiceType, setPracticeType] = useState<"MCQ" | "PROJECT">("MCQ");
   const [testType, setTestType] = useState<"CODING_TEST" | "SUBJECTIVE_TEST" | "VIDEO_TEST" | "PROJECT">("CODING_TEST");
   const [lessonType, setLessonType] = useState<LessonType>("READING");
@@ -244,6 +249,8 @@ export default function EditCoursePage() {
           const parsed = JSON.parse(activeLessonData.content);
           if (parsed.curriculumMode) {
             setCurriculumMode(parsed.curriculumMode);
+          } else if (parsed.type === "FOLDER" || parsed.category === "FOLDER") {
+            setCurriculumMode("FOLDER");
           } else if (parsed.type === "QUIZ" || parsed.type === "quiz") {
             setCurriculumMode("PRACTICE");
             setPracticeType("MCQ");
@@ -323,8 +330,11 @@ export default function EditCoursePage() {
   const isLec = curriculumMode === "LECTURE";
   const isPrac = curriculumMode === "PRACTICE";
   const isTst = curriculumMode === "TEST";
+  const isFolder = curriculumMode === "FOLDER";
 
-  const resolvedType = isLec
+  const resolvedType = isFolder
+    ? "FOLDER"
+    : isLec
     ? videoUrl ? "VIDEO" : "READING"
     : isPrac
     ? practiceType === "MCQ"
@@ -338,7 +348,7 @@ export default function EditCoursePage() {
     ? "SUBJECTIVE_TEST"
     : "ASSIGNMENT";
 
-  const resolvedCategory = isPrac ? "PRACTICE" : isTst ? "TEST" : "LECTURE";
+  const resolvedCategory = isFolder ? "FOLDER" : isPrac ? "PRACTICE" : isTst ? "TEST" : "LECTURE";
 
   const formData = {
     title: lessonTitle,
@@ -541,6 +551,7 @@ export default function EditCoursePage() {
       | "TEST_VIVA"
       | "TEST_SUBJECTIVE"
       | "TEST_PROJECT"
+      | "FOLDER"
       | "CUSTOM",
     customTitle?: string
   ) => {
@@ -551,6 +562,25 @@ export default function EditCoursePage() {
       let videoUrl: string | undefined = undefined;
 
       switch (lessonTypeKey) {
+        case "FOLDER":
+          title = customTitle || "📁 Resources & Lab Files";
+          payloadContent = {
+            type: "FOLDER",
+            category: "FOLDER",
+            curriculumMode: "FOLDER",
+            isFreePreview: true,
+            contentMarkdown: "### 📁 Resources & Learning Assets\n\nDownload starter files, slides, and supplementary cheat sheets for this chapter.",
+            attachments: [
+              {
+                id: `att-${Date.now()}`,
+                name: "Starter Code & Project Files",
+                url: "https://github.com",
+                size: "2.4 MB",
+              },
+            ],
+          };
+          break;
+
         case "LECTURE_VIDEO":
           title = customTitle || "Lecture Video";
           videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1";
@@ -997,7 +1027,7 @@ export default function EditCoursePage() {
                       <button
                         type="button"
                         onClick={() => setCurriculumMode("LECTURE")}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                           curriculumMode === "LECTURE"
                             ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 shadow-2xs"
                             : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
@@ -1009,26 +1039,38 @@ export default function EditCoursePage() {
                       <button
                         type="button"
                         onClick={() => setCurriculumMode("PRACTICE")}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                           curriculumMode === "PRACTICE"
                             ? "bg-white dark:bg-amber-500/20 text-amber-600 dark:text-amber-300 shadow-2xs"
                             : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                         }`}
                       >
                         <FileQuestion className="w-3.5 h-3.5 stroke-[2.5]" />
-                        <span>Practice Assignment</span>
+                        <span>Practice</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setCurriculumMode("TEST")}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                           curriculumMode === "TEST"
                             ? "bg-white dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 shadow-2xs"
                             : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                         }`}
                       >
                         <Award className="w-3.5 h-3.5 stroke-[2.5]" />
-                        <span>Test Assignment</span>
+                        <span>Test</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCurriculumMode("FOLDER")}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                          curriculumMode === "FOLDER"
+                            ? "bg-white dark:bg-teal-500/20 text-teal-600 dark:text-teal-300 shadow-2xs"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                        }`}
+                      >
+                        <FolderOpen className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Folder</span>
                       </button>
                     </div>
 
@@ -1182,6 +1224,136 @@ export default function EditCoursePage() {
                   </div>
                 )}
               </div>
+
+              {/* ──────────────── MODE: FOLDER (RESOURCES CONTAINER) ──────────────── */}
+              {curriculumMode === "FOLDER" && (
+                <div className="space-y-6">
+                  <div className="p-4 rounded-2xl bg-teal-50/60 dark:bg-teal-950/20 border border-teal-200/80 dark:border-teal-800/40 flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                      <FolderOpen className="w-5 h-5 stroke-[2]" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-teal-950 dark:text-teal-200">
+                        Folder / Sub-Section Container
+                      </h3>
+                      <p className="text-[11px] text-teal-800/80 dark:text-teal-300/80 mt-0.5">
+                        Use this folder to organize chapter resources, starter source code, lecture slides, downloadable cheat sheets, and supplementary notes.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* WYSIWYG Folder Notes / Instructions */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
+                      Folder Overview & Notes (Markdown)
+                    </label>
+                    <RichEditor
+                      initialValue={contentHtml || contentMarkdown}
+                      onChange={(html) => {
+                        setContentHtml(html);
+                        setContentMarkdown(html);
+                      }}
+                      placeholder="Write guidelines, description of files in this folder, and download instructions..."
+                    />
+                  </div>
+
+                  {/* Folder Resource Files & Download Links */}
+                  <div className="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                        <Paperclip className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                        Downloadable Assets & Resource Links ({attachments.length})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddAttachment(!showAddAttachment)}
+                        className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline cursor-pointer"
+                      >
+                        + Add File / Asset
+                      </button>
+                    </div>
+
+                    {showAddAttachment && (
+                      <div className="p-3.5 rounded-xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/40 dark:bg-teal-950/20 space-y-2.5">
+                        <input
+                          type="text"
+                          placeholder="Asset Name (e.g. Starter Repo, Slide Deck, Cheatsheet PDF)..."
+                          value={newAttachmentName}
+                          onChange={(e) => setNewAttachmentName(e.target.value)}
+                          className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+                        />
+                        <input
+                          type="url"
+                          placeholder="Resource URL (e.g. https://github.com/... or Google Drive link)..."
+                          value={newAttachmentUrl}
+                          onChange={(e) => setNewAttachmentUrl(e.target.value)}
+                          className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] focus:outline-none focus:ring-2 focus:ring-teal-500/40 font-mono"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowAddAttachment(false)}
+                            className="px-2.5 py-1 text-xs text-slate-500 font-semibold cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleAddAttachment}
+                            className="px-3 py-1 text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 rounded-lg shadow-xs cursor-pointer"
+                          >
+                            Add Asset
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {attachments.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic py-2">
+                        No files attached yet. Click "+ Add File / Asset" above to add starter code, slides or links.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {attachments.map((att) => (
+                          <div
+                            key={att.id}
+                            className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#070A11] group"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <FileArchive className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                                  {att.name}
+                                </p>
+                                <a
+                                  href={att.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-[10px] text-teal-600 dark:text-teal-400 truncate hover:underline font-mono block"
+                                >
+                                  {att.url}
+                                </a>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {att.size && (
+                                <span className="text-[10px] text-slate-400">{att.size}</span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeAttachment(att.id)}
+                                className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* ──────────────── MODE: LECTURE ──────────────── */}
               {curriculumMode === "LECTURE" && (
@@ -1994,6 +2166,7 @@ interface ChapterSectionProps {
       | "TEST_VIVA"
       | "TEST_SUBJECTIVE"
       | "TEST_PROJECT"
+      | "FOLDER"
       | "CUSTOM",
     customTitle?: string
   ) => void;
@@ -2093,42 +2266,56 @@ function ChapterSection({
       return {
         label: "Video",
         bg: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20",
+        isFolder: false,
       };
     }
     const text = `${les.title || ""} ${les.slug || ""} ${les.lessonId || ""}`.toLowerCase();
+    if (text.includes("folder") || text.includes("📁") || les.type === "FOLDER" || les.category === "FOLDER") {
+      return {
+        label: "Folder",
+        bg: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20",
+        isFolder: true,
+      };
+    }
     if (text.includes("quiz") || text.includes("mcq")) {
       return {
         label: "MCQ",
         bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+        isFolder: false,
       };
     }
     if (text.includes("coding") || text.includes("code")) {
       return {
         label: "Coding",
         bg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20",
+        isFolder: false,
       };
     }
     if (text.includes("viva") || text.includes("video")) {
       return {
         label: "Viva",
         bg: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
+        isFolder: false,
       };
     }
     if (text.includes("subjective") || text.includes("theory")) {
       return {
         label: "Subjective",
         bg: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20",
+        isFolder: false,
       };
     }
     if (text.includes("project") || text.includes("lab") || text.includes("capstone")) {
       return {
         label: "Project",
         bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+        isFolder: false,
       };
     }
     return {
       label: "Lesson",
       bg: "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60",
+      isFolder: false,
     };
   };
 
@@ -2379,6 +2566,31 @@ function ChapterSection({
               </div>
             </div>
 
+            {/* 4. Folder / Resource Section */}
+            <div className="space-y-1">
+              <div className="px-1 text-[9px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                Folder / Sub-Section
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddMenu(false);
+                  onAddLessonWithType("FOLDER");
+                }}
+                className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-teal-200/80 dark:border-teal-500/25 hover:border-teal-400 hover:bg-teal-50/40 dark:hover:bg-teal-500/10 text-left transition-all group cursor-pointer shadow-2xs"
+              >
+                <div className="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                  <FolderPlus className="w-4 h-4 stroke-[2]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-300">
+                    Folder / Resources Container
+                  </p>
+                  <p className="text-[10px] text-slate-400">Group notes, downloadable files & materials</p>
+                </div>
+              </button>
+            </div>
+
             {/* Custom Option */}
             <div className="pt-1 border-t border-slate-200/60 dark:border-slate-800">
               <button
@@ -2408,7 +2620,7 @@ function ChapterSection({
                   onClick={() => setShowAddMenu(true)}
                   className="text-[11px] text-sky-600 dark:text-sky-400 font-bold hover:underline cursor-pointer"
                 >
-                  + Add Lecture or Assignment
+                  + Add Lecture, Assignment or Folder
                 </button>
               )}
             </div>
@@ -2435,6 +2647,9 @@ function ChapterSection({
                     onClick={() => onSelectLesson(les.lessonId)}
                     className="flex-1 text-left min-w-0 flex items-center gap-2 cursor-pointer"
                   >
+                    {badge.isFolder ? (
+                      <Folder className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                    ) : null}
                     <span className="text-xs font-semibold truncate flex-1">
                       {displayTitle}
                     </span>

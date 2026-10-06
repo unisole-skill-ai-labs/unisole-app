@@ -35,6 +35,10 @@ import {
   Video as VideoIcon,
   Code2,
   MessageSquare,
+  Folder,
+  FolderOpen,
+  FileArchive,
+  Download,
 } from "lucide-react";
 import {
   useGetPathwayContentQuery,
@@ -69,6 +73,7 @@ import {
   saveSubmission,
   getSubmissionForLesson,
 } from "../utils/submissionsStorage";
+import { renderMarkdownToHtml } from "../utils/formatContent";
 
 export default function LmsPlayerPage() {
   const { pathwayId } = useParams();
@@ -121,29 +126,41 @@ export default function LmsPlayerPage() {
             const pracType = (l.practiceType || parsedContent?.practiceType || "").toUpperCase();
             const testType = (l.testType || parsedContent?.testType || "").toUpperCase();
 
-            const isExplicitTest = curMode === "TEST" || parsedContent?.category === "TEST";
-            const isExplicitPractice = curMode === "PRACTICE" || parsedContent?.category === "PRACTICE";
+            const isFolder =
+              curMode === "FOLDER" ||
+              cType === "FOLDER" ||
+              parsedContent?.category === "FOLDER" ||
+              (l.title && l.title.toLowerCase().includes("folder")) ||
+              (l.title && l.title.includes("📁"));
+
+            const isExplicitTest = !isFolder && (curMode === "TEST" || parsedContent?.category === "TEST");
+            const isExplicitPractice = !isFolder && (curMode === "PRACTICE" || parsedContent?.category === "PRACTICE");
             const isLecture =
-              curMode === "LECTURE" ||
+              !isFolder &&
+              (curMode === "LECTURE" ||
               parsedContent?.category === "LECTURE" ||
-              (!isExplicitTest && !isExplicitPractice && (cType === "READING" || cType === "VIDEO" || (!cType && !testType && !pracType)));
+              (!isExplicitTest && !isExplicitPractice && (cType === "READING" || cType === "VIDEO" || (!cType && !testType && !pracType))));
 
             const isCoding =
+              !isFolder &&
               !isLecture &&
               isExplicitTest &&
               (testType === "CODING_TEST" || cType === "CODING_TEST" || l.id?.includes("_code"));
 
             const isVideoTest =
+              !isFolder &&
               !isLecture &&
               isExplicitTest &&
               (testType === "VIDEO_TEST" || cType === "VIDEO_TEST" || l.id?.includes("_viva"));
 
             const isSubjective =
+              !isFolder &&
               !isLecture &&
               isExplicitTest &&
               (testType === "SUBJECTIVE_TEST" || cType === "SUBJECTIVE_TEST" || l.id?.includes("_sub"));
 
             const isQuiz =
+              !isFolder &&
               !isLecture &&
               !isCoding &&
               !isVideoTest &&
@@ -152,6 +169,7 @@ export default function LmsPlayerPage() {
               (cType === "QUIZ" || pracType === "MCQ" || l.id?.includes("_quiz"));
 
             const isAssignment =
+              !isFolder &&
               !isLecture &&
               !isCoding &&
               !isVideoTest &&
@@ -188,7 +206,9 @@ export default function LmsPlayerPage() {
               (fi) => fi.type === (isQuiz ? "quiz" : isAssignment ? "assignment" : isCoding ? "coding_test" : "video")
             );
 
-            const resolvedType = isLecture
+            const resolvedType = isFolder
+              ? ("folder" as const)
+              : isLecture
               ? ("video" as const)
               : isCoding
               ? ("coding_test" as const)
@@ -200,7 +220,9 @@ export default function LmsPlayerPage() {
               ? ("quiz" as const)
               : ("assignment" as const);
 
-            const resolvedCategory = isLecture
+            const resolvedCategory = isFolder
+              ? ("FOLDER" as const)
+              : isLecture
               ? ("LECTURE" as const)
               : isExplicitTest || isCoding || isVideoTest || isSubjective
               ? ("TEST" as const)
@@ -216,6 +238,7 @@ export default function LmsPlayerPage() {
               description: l.description || parsedContent?.contentMarkdown,
               questions: parsedQuestions || fallbackItem?.questions,
               instructions: parsedInstructions || fallbackItem?.instructions,
+              attachments: parsedContent?.attachments || l.attachments || [],
               maxScore,
               config: {
                 starterCode: codingConfig?.starterCode,
@@ -879,23 +902,27 @@ export default function LmsPlayerPage() {
   // VIEW 2: Chapter Details / Week Breakdown (Unisole Sky Theme)
   // -------------------------------------------------------------
   if (currentView === "chapter") {
+    const folderLessons =
+      selectedModule?.items.filter((i) => i.category === "FOLDER" || i.type === "folder") || [];
     const videoLessons =
-      selectedModule?.items.filter((i) => i.category === "LECTURE" || i.type === "video") || [];
+      selectedModule?.items.filter((i) => (i.category === "LECTURE" || i.type === "video") && i.category !== "FOLDER") || [];
     const practiceLessons =
       selectedModule?.items.filter(
         (i: any) =>
-          i.category === "PRACTICE" ||
+          (i.category === "PRACTICE" ||
           (i.type === "quiz" && i.category !== "TEST" && i.category !== "LECTURE") ||
-          (i.type === "assignment" && i.category === "PRACTICE")
+          (i.type === "assignment" && i.category === "PRACTICE")) &&
+          i.category !== "FOLDER"
       ) || [];
     const testLessons =
       selectedModule?.items.filter(
         (i: any) =>
-          i.category === "TEST" ||
+          (i.category === "TEST" ||
           i.type === "coding_test" ||
           i.type === "subjective_test" ||
           i.type === "video_test" ||
-          (i.type === "assignment" && i.category === "TEST")
+          (i.type === "assignment" && i.category === "TEST")) &&
+          i.category !== "FOLDER"
       ) || [];
 
     return (
@@ -935,6 +962,53 @@ export default function LmsPlayerPage() {
 
         {/* Content Area with Responsive Container */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+          {/* Section 0: Resource Folders */}
+          {folderLessons.length > 0 && (
+            <div className="space-y-3.5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4" />
+                  <span>Resource Folders ({folderLessons.length})</span>
+                </h2>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Downloadable Materials</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {folderLessons.map((item: any) => {
+                  const isDone = completedLessonIds.includes(item.id);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedLesson(item);
+                        setCurrentView("player");
+                      }}
+                      className="bg-white dark:bg-[#0B1120] hover:bg-teal-50/40 dark:hover:bg-teal-950/20 rounded-2xl border border-teal-200/80 dark:border-teal-500/30 hover:border-teal-400 p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 pr-2">
+                        <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-500/15 border border-teal-200 dark:border-teal-500/30 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                          <Folder className="w-5 h-5 stroke-[2]" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-teal-600 dark:group-hover:text-teal-300">
+                            {item.title}
+                          </h3>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            {item.attachments?.length || 0} Files & Notes
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-teal-500 group-hover:translate-x-0.5 transition-transform" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Section 1: Lecture Videos */}
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
@@ -1113,23 +1187,24 @@ export default function LmsPlayerPage() {
     );
   }
 
-  // -------------------------------------------------------------
-  // VIEW 3: Video Player / Interactive Assessment Runner
-  // -------------------------------------------------------------
-  const isVideo = selectedLesson?.type === "video";
-  const isQuiz = selectedLesson?.type === "quiz";
+  const isFolder = selectedLesson?.type === "folder" || (selectedLesson as any)?.category === "FOLDER";
+  const isVideo = !isFolder && selectedLesson?.type === "video";
+  const isQuiz = !isFolder && selectedLesson?.type === "quiz";
   const isAssignment =
+    !isFolder &&
     selectedLesson?.type === "assignment" &&
     (selectedLesson as any)?.category !== "TEST" &&
     (selectedLesson as any)?.type !== "coding_test";
   const isCodingTest =
-    (selectedLesson as any)?.type === "coding_test" ||
+    !isFolder &&
+    ((selectedLesson as any)?.type === "coding_test" ||
     (selectedLesson as any)?.type === "code" ||
-    ((selectedLesson as any)?.category === "TEST" && (selectedLesson as any)?.type === "code");
+    ((selectedLesson as any)?.category === "TEST" && (selectedLesson as any)?.type === "code"));
   const isSubjectiveOrVideoTest =
-    (selectedLesson as any)?.type === "subjective_test" ||
+    !isFolder &&
+    ((selectedLesson as any)?.type === "subjective_test" ||
     (selectedLesson as any)?.type === "video_test" ||
-    ((selectedLesson as any)?.category === "TEST" && (selectedLesson as any)?.type === "video");
+    ((selectedLesson as any)?.category === "TEST" && (selectedLesson as any)?.type === "video"));
 
   const handleAssessmentCodeSubmit = async (code: string, testSummary: any) => {
     markLessonComplete(selectedLesson.id);
@@ -1159,6 +1234,84 @@ export default function LmsPlayerPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#F8FAFC] dark:bg-[#070A11] text-slate-900 dark:text-slate-100 flex flex-col justify-between animate-fade-in">
       <div>
+        {/* FOLDER & RESOURCES HUB VIEW */}
+        {isFolder && (
+          <div className="bg-white dark:bg-[#0B1120] border-b border-slate-200/80 dark:border-sky-500/20 py-8">
+            <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setCurrentView("chapter")}
+                  className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Curriculum Module</span>
+                </button>
+                <button
+                  onClick={() => markLessonComplete(selectedLesson.id)}
+                  className="text-[10px] font-bold px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                >
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  <span>{completedLessonIds.includes(selectedLesson.id) ? "Completed" : "Mark as Reviewed"}</span>
+                </button>
+              </div>
+
+              <div className="flex items-start gap-4 p-5 rounded-2xl bg-teal-50/60 dark:bg-teal-950/20 border border-teal-200/70 dark:border-teal-800/40">
+                <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                  <FolderOpen className="w-6 h-6 stroke-[2]" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                    {selectedLesson.title}
+                  </h1>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Resource folder containing starter code, supplementary cheat sheets, and learning materials.
+                  </p>
+                </div>
+              </div>
+
+              {/* Folder Overview Markdown Notes */}
+              {selectedLesson.description && (
+                <div className="p-5 rounded-2xl bg-slate-50/60 dark:bg-[#070A11] border border-slate-200/80 dark:border-slate-800/80 prose prose-slate dark:prose-invert max-w-none text-xs sm:text-sm">
+                  <div dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(selectedLesson.description) }} />
+                </div>
+              )}
+
+              {/* Downloadable Attachments Cards */}
+              {selectedLesson.attachments && selectedLesson.attachments.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Files & Learning Assets ({selectedLesson.attachments.length})
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {selectedLesson.attachments.map((att: any) => (
+                      <a
+                        key={att.id}
+                        href={att.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#070A11] hover:border-teal-400 hover:shadow-xs transition-all group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                          <div className="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                            <FileArchive className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-teal-600">
+                              {att.name}
+                            </p>
+                            <p className="text-[10px] text-slate-400 truncate">{att.size || "Downloadable Link"}</p>
+                          </div>
+                        </div>
+                        <Download className="w-4 h-4 text-slate-400 group-hover:text-teal-600 shrink-0" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* CODING TEST RUNNER */}
         {isCodingTest && (
           <div className="bg-slate-50/70 dark:bg-[#0B1120] border-b border-slate-200/80 dark:border-sky-500/20 py-8">

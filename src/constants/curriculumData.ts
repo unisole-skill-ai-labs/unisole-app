@@ -10,14 +10,15 @@ export interface LessonItem {
   id: string;
   title: string;
   duration?: string;
-  type: "video" | "quiz" | "assignment" | "coding_test" | "video_test" | "subjective_test";
-  category?: "LECTURE" | "PRACTICE" | "TEST";
+  type: "video" | "quiz" | "assignment" | "coding_test" | "video_test" | "subjective_test" | "folder";
+  category?: "LECTURE" | "PRACTICE" | "TEST" | "FOLDER";
   videoUrl?: string;
   description?: string;
   questions?: QuizQuestion[];
   instructions?: string;
   config?: any;
   maxScore?: number;
+  attachments?: Array<{ id: string; name: string; url: string; size?: string }>;
 }
 
 export interface ModuleSection {
