@@ -48,7 +48,8 @@ export default function StudentsPage() {
   const { data: courses = [] } = useGetAdminCoursesQuery(undefined);
   const { data: mentors = [], isLoading: isLoadingMentors } = useGetAdminMentorsQuery(undefined);
   const { data: students = [], isLoading: isLoadingStudents, refetch: refetchStudents } = useGetAdminStudentsQuery({
-    enrolledOnly: isProgramManager ? true : undefined,
+    role: "STUDENT",
+    enrolledOnly: true,
     courseId: selectedCourseId !== "ALL" ? selectedCourseId : undefined,
   });
 

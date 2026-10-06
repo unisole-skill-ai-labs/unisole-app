@@ -95,7 +95,7 @@ export default function EditCoursePage() {
   const [cohortFeedback, setCohortFeedback] = useState<string | null>(null);
 
   const { data: courseStudents = [], refetch: refetchCourseStudents } = useGetAdminStudentsQuery(
-    { courseId },
+    { courseId, role: "STUDENT", enrolledOnly: true },
     { skip: !courseId }
   );
   const { data: mentorsList = [] } = useGetAdminMentorsQuery(undefined);

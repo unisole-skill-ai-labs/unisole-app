@@ -40,7 +40,7 @@ export default function AdminDashboardPage() {
 
   const { data: courses = [] } = useGetAdminCoursesQuery(undefined);
   const { data: lessons = [] } = useGetAdminLessonsQuery(undefined);
-  const { data: students = [] } = useGetAdminStudentsQuery(undefined);
+  const { data: students = [] } = useGetAdminStudentsQuery({ role: "STUDENT", enrolledOnly: true });
 
   // Live Counts from Database
   const summary = stats?.summary || {
