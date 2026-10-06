@@ -433,6 +433,28 @@ export const apiSlice = createApi({
       providesTags: ["Cohort", "Submissions"],
     }),
 
+    // Admin Mentorship Allocation Endpoints (Admin-only mutations)
+    getAdminMentors: builder.query({
+      query: () => "/api/admin/mentorship/mentors",
+      providesTags: ["Cohort"],
+    }),
+    assignMentor: builder.mutation({
+      query: (body) => ({
+        url: "/api/admin/mentorship/assign",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminStudents", "Cohort", "Submissions"],
+    }),
+    unassignMentor: builder.mutation({
+      query: (body) => ({
+        url: "/api/admin/mentorship/unassign",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminStudents", "Cohort", "Submissions"],
+    }),
+
     // Course Assignments Studio (Practice vs Test)
     getCourseAssignments: builder.query({
       query: (params) => ({
@@ -524,6 +546,9 @@ export const {
   // Mentorship & Assessment Studio hooks
   useGetStudentMentorQuery,
   useGetMentorCockpitQuery,
+  useGetAdminMentorsQuery,
+  useAssignMentorMutation,
+  useUnassignMentorMutation,
   useGetCourseAssignmentsQuery,
   useCreateCourseAssignmentMutation,
   useSubmitAssessmentTaskMutation,
