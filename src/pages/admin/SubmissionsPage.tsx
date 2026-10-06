@@ -132,18 +132,18 @@ export default function SubmissionsPage() {
             <Award className="w-5 h-5 text-sky-500" />
             <span>
               {isMentor
-                ? "Mentorship Cockpit & Evaluations"
+                ? "Mentor View"
                 : isProgramManager
-                ? "Program Manager Mentorship Hub"
-                : "Mentorship Cockpit & Evaluations"}
+                ? "Mentor View — Cohort Oversight"
+                : "Mentor View & Evaluations"}
             </span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {isMentor
-              ? "Evaluate deliverables, submit viva marks, and guide your assigned mentees."
+              ? "Track student learning progress, evaluate coding & project deliverables, and guide your assigned batch."
               : isProgramManager
-              ? "Program Manager view: Monitor live mentor cohorts and review deliverables submitted across mentors."
-              : "Platform view: Track student milestones, evaluate coding deliverables, and audit assessment vivas."}
+              ? "Program Manager view: Monitor cohort milestones and review student deliverables submitted across mentors."
+              : "Platform view: Track student milestones, evaluate deliverables, and audit submitted assessments."}
           </p>
         </div>
 
@@ -178,7 +178,7 @@ export default function SubmissionsPage() {
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
               }`}
             >
-              Mentorship Cockpit
+              Mentor View
             </button>
             <button
               onClick={() => setActiveTab("table")}
