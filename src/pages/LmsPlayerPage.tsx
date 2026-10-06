@@ -206,8 +206,8 @@ export default function LmsPlayerPage() {
         };
       });
     }
-    return canonical.modules;
-  }, [courses, canonical]);
+    return [];
+  }, [courses]);
 
   // Milestones & Mentorship State
   const [isMilestonesOpen, setIsMilestonesOpen] = useState(false);
@@ -625,39 +625,53 @@ export default function LmsPlayerPage() {
           {/* Tab Content: Learning Modules vs Groups vs Notes */}
           <div className="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-6">
             {overviewTab === "learning" && (
-              <div className="space-y-3.5">
-                {modules.map((mod, idx) => {
-                  const modItems = mod.items || [];
-                  const modCompletedCount = modItems.filter((i) => completedLessonIds.includes(i.id)).length;
-                  const isModCompleted = modItems.length > 0 && modCompletedCount === modItems.length;
+              modules.length === 0 ? (
+                <div className="bg-white dark:bg-[#0B1120] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center space-y-3">
+                  <BookOpen className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto stroke-[1.5]" />
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      Curriculum Under Preparation
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                      Lessons and assessments for this course will appear here once published by the instructor in the Course Studio.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3.5">
+                  {modules.map((mod, idx) => {
+                    const modItems = mod.items || [];
+                    const modCompletedCount = modItems.filter((i) => completedLessonIds.includes(i.id)).length;
+                    const isModCompleted = modItems.length > 0 && modCompletedCount === modItems.length;
 
-                  return (
-                    <div
-                      key={mod.id}
-                      onClick={() => {
-                        setSelectedModule(mod);
-                        setCurrentView("chapter");
-                      }}
-                      className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-4.5 shadow-2xs hover:border-sky-500/40 dark:hover:border-sky-500/40 hover:shadow-xs transition-all flex items-center justify-between cursor-pointer group"
-                    >
-                      <div className="pr-3 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate group-hover:text-sky-500 transition-colors">
-                            {mod.title}
-                          </h3>
-                          {isModCompleted && (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                          )}
+                    return (
+                      <div
+                        key={mod.id}
+                        onClick={() => {
+                          setSelectedModule(mod);
+                          setCurrentView("chapter");
+                        }}
+                        className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-4.5 shadow-2xs hover:border-sky-500/40 dark:hover:border-sky-500/40 hover:shadow-xs transition-all flex items-center justify-between cursor-pointer group"
+                      >
+                        <div className="pr-3 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate group-hover:text-sky-500 transition-colors">
+                              {mod.title}
+                            </h3>
+                            {isModCompleted && (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 truncate">
+                            {mod.meta} {modCompletedCount > 0 && `· ${modCompletedCount}/${modItems.length} Done`}
+                          </p>
                         </div>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 truncate">
-                          {mod.meta} {modCompletedCount > 0 && `· ${modCompletedCount}/${modItems.length} Done`}
-                        </p>
+                        <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-sky-500 shrink-0 transition-transform group-hover:translate-x-0.5" />
                       </div>
-                      <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-sky-500 shrink-0 transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )
             )}
 
             {overviewTab === "groups" && (
