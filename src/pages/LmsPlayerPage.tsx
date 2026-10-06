@@ -110,34 +110,53 @@ export default function LmsPlayerPage() {
               }
             }
 
+            const curMode = (
+              l.curriculumMode ||
+              parsedContent?.curriculumMode ||
+              parsedContent?.category ||
+              l.category ||
+              ""
+            ).toUpperCase();
             const cType = (l.contentType || parsedContent?.type || "").toUpperCase();
-            const curMode = (l.curriculumMode || parsedContent?.curriculumMode || "").toUpperCase();
             const pracType = (l.practiceType || parsedContent?.practiceType || "").toUpperCase();
             const testType = (l.testType || parsedContent?.testType || "").toUpperCase();
 
+            const isExplicitTest = curMode === "TEST" || parsedContent?.category === "TEST";
+            const isExplicitPractice = curMode === "PRACTICE" || parsedContent?.category === "PRACTICE";
+            const isLecture =
+              curMode === "LECTURE" ||
+              parsedContent?.category === "LECTURE" ||
+              (!isExplicitTest && !isExplicitPractice && (cType === "READING" || cType === "VIDEO" || (!cType && !testType && !pracType)));
+
             const isCoding =
-              cType === "CODING_TEST" ||
-              testType === "CODING_TEST" ||
-              l.id?.includes("_code");
+              !isLecture &&
+              isExplicitTest &&
+              (testType === "CODING_TEST" || cType === "CODING_TEST" || l.id?.includes("_code"));
+
             const isVideoTest =
-              cType === "VIDEO_TEST" ||
-              testType === "VIDEO_TEST" ||
-              l.id?.includes("_viva");
+              !isLecture &&
+              isExplicitTest &&
+              (testType === "VIDEO_TEST" || cType === "VIDEO_TEST" || l.id?.includes("_viva"));
+
             const isSubjective =
-              cType === "SUBJECTIVE_TEST" ||
-              testType === "SUBJECTIVE_TEST" ||
-              l.id?.includes("_sub");
+              !isLecture &&
+              isExplicitTest &&
+              (testType === "SUBJECTIVE_TEST" || cType === "SUBJECTIVE_TEST" || l.id?.includes("_sub"));
+
             const isQuiz =
+              !isLecture &&
               !isCoding &&
               !isVideoTest &&
               !isSubjective &&
+              (isExplicitPractice || cType === "QUIZ" || pracType === "MCQ") &&
               (cType === "QUIZ" || pracType === "MCQ" || l.id?.includes("_quiz"));
+
             const isAssignment =
+              !isLecture &&
               !isCoding &&
               !isVideoTest &&
               !isSubjective &&
-              !isQuiz &&
-              (cType === "ASSIGNMENT" || pracType === "PROJECT" || testType === "PROJECT" || l.id?.includes("_lab") || l.id?.includes("_cap"));
+              !isQuiz;
 
             // Questions
             const parsedQuestions: QuizQuestion[] | undefined =
@@ -169,7 +188,9 @@ export default function LmsPlayerPage() {
               (fi) => fi.type === (isQuiz ? "quiz" : isAssignment ? "assignment" : isCoding ? "coding_test" : "video")
             );
 
-            const resolvedType = isCoding
+            const resolvedType = isLecture
+              ? ("video" as const)
+              : isCoding
               ? ("coding_test" as const)
               : isVideoTest
               ? ("video_test" as const)
@@ -177,17 +198,21 @@ export default function LmsPlayerPage() {
               ? ("subjective_test" as const)
               : isQuiz
               ? ("quiz" as const)
-              : isAssignment
-              ? ("assignment" as const)
-              : ("video" as const);
+              : ("assignment" as const);
+
+            const resolvedCategory = isLecture
+              ? ("LECTURE" as const)
+              : isExplicitTest || isCoding || isVideoTest || isSubjective
+              ? ("TEST" as const)
+              : ("PRACTICE" as const);
 
             return {
               id: l.id || `item-${idx}-${lIdx}`,
               title: l.title || `${idx + 1}.${lIdx + 1} Lesson`,
               duration: l.durationMinutes ? `${l.durationMinutes} Mins` : `${lIdx * 3 + 12} Mins`,
               type: resolvedType,
-              category: curMode === "TEST" || isCoding || isVideoTest || isSubjective ? "TEST" as const : curMode === "PRACTICE" || isQuiz ? "PRACTICE" as const : "LECTURE" as const,
-              videoUrl: l.videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1",
+              category: resolvedCategory,
+              videoUrl: l.videoUrl || parsedContent?.videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1",
               description: l.description || parsedContent?.contentMarkdown,
               questions: parsedQuestions || fallbackItem?.questions,
               instructions: parsedInstructions || fallbackItem?.instructions,
@@ -854,13 +879,14 @@ export default function LmsPlayerPage() {
   // VIEW 2: Chapter Details / Week Breakdown (Unisole Sky Theme)
   // -------------------------------------------------------------
   if (currentView === "chapter") {
-    const videoLessons = selectedModule?.items.filter((i) => i.type === "video") || [];
+    const videoLessons =
+      selectedModule?.items.filter((i) => i.category === "LECTURE" || i.type === "video") || [];
     const practiceLessons =
       selectedModule?.items.filter(
         (i: any) =>
           i.category === "PRACTICE" ||
-          (i.type === "quiz" && !i.isTest) ||
-          (i.type === "assignment" && !i.isTest && i.category !== "TEST")
+          (i.type === "quiz" && i.category !== "TEST" && i.category !== "LECTURE") ||
+          (i.type === "assignment" && i.category === "PRACTICE")
       ) || [];
     const testLessons =
       selectedModule?.items.filter(
@@ -869,7 +895,7 @@ export default function LmsPlayerPage() {
           i.type === "coding_test" ||
           i.type === "subjective_test" ||
           i.type === "video_test" ||
-          i.isTest
+          (i.type === "assignment" && i.category === "TEST")
       ) || [];
 
     return (

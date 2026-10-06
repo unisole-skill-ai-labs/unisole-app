@@ -305,64 +305,66 @@ export default function EditCoursePage() {
   }, [activeLessonData]);
 
   // Aggregate formData for autosave
+  const isLec = curriculumMode === "LECTURE";
+  const isPrac = curriculumMode === "PRACTICE";
+  const isTst = curriculumMode === "TEST";
+
+  const resolvedType = isLec
+    ? videoUrl ? "VIDEO" : "READING"
+    : isPrac
+    ? practiceType === "MCQ"
+      ? "QUIZ"
+      : "ASSIGNMENT"
+    : testType === "CODING_TEST"
+    ? "CODING_TEST"
+    : testType === "VIDEO_TEST"
+    ? "VIDEO_TEST"
+    : testType === "SUBJECTIVE_TEST"
+    ? "SUBJECTIVE_TEST"
+    : "ASSIGNMENT";
+
+  const resolvedCategory = isPrac ? "PRACTICE" : isTst ? "TEST" : "LECTURE";
+
   const formData = {
     title: lessonTitle,
     status: lessonStatus,
     durationMinutes,
     videoUrl,
-    type:
-      curriculumMode === "LECTURE"
-        ? "READING"
-        : curriculumMode === "PRACTICE"
-        ? practiceType === "MCQ"
-          ? "QUIZ"
-          : "ASSIGNMENT"
-        : testType === "CODING_TEST"
-        ? "CODING_TEST"
-        : testType === "VIDEO_TEST"
-        ? "VIDEO_TEST"
-        : testType === "SUBJECTIVE_TEST"
-        ? "SUBJECTIVE_TEST"
-        : "ASSIGNMENT",
-    category:
-      curriculumMode === "PRACTICE"
-        ? "PRACTICE"
-        : curriculumMode === "TEST"
-        ? "TEST"
-        : "LECTURE",
+    type: resolvedType,
+    category: resolvedCategory,
     curriculumMode,
-    practiceType,
-    testType,
+    practiceType: isPrac ? practiceType : undefined,
+    testType: isTst ? testType : undefined,
     isFreePreview,
     contentMarkdown,
     contentHtml,
     codeLanguage,
     codeSnippet,
-    quiz: {
+    quiz: isPrac && practiceType === "MCQ" ? {
       passingScorePercent: passingScore,
       questions,
-    },
-    assignment: {
+    } : undefined,
+    assignment: isPrac && practiceType === "PROJECT" ? {
       instructions: assignmentInstructions,
       allowedTypes,
       maxPoints,
-    },
-    codingTest: {
+    } : undefined,
+    codingTest: isTst && testType === "CODING_TEST" ? {
       starterCode: codingStarterCode,
       language: codingLanguage,
       testCases: codingTestCases,
       maxScore: maxPoints,
-    },
-    subjectiveTest: {
+    } : undefined,
+    subjectiveTest: isTst && testType === "SUBJECTIVE_TEST" ? {
       prompt: subjectivePrompt,
       rubrics: subjectiveRubric,
       maxScore: maxPoints,
-    },
-    videoTest: {
+    } : undefined,
+    videoTest: isTst && testType === "VIDEO_TEST" ? {
       prompt: videoPrompt,
       maxDurationSec: videoDurationLimitSec,
       maxScore: maxPoints,
-    },
+    } : undefined,
     attachments,
   };
 
@@ -490,6 +492,8 @@ export default function EditCoursePage() {
       const slug = `${course?.slug || "course"}-les-${Date.now()}`;
       const defaultContent = JSON.stringify({
         type: "READING",
+        category: "LECTURE",
+        curriculumMode: "LECTURE",
         isFreePreview: false,
         contentMarkdown: "Write lesson reading notes here...",
         codeLanguage: "typescript",
