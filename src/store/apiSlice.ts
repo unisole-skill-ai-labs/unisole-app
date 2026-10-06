@@ -443,9 +443,9 @@ export const apiSlice = createApi({
       providesTags: ["Submissions"],
     }),
 
-    // Admin Mentorship Allocation Endpoints (Admin-only mutations)
+    // Mentorship Allocation Endpoints
     getAdminMentors: builder.query({
-      query: () => "/api/admin/mentorship/mentors",
+      query: () => "/api/lms/mentors",
       providesTags: ["Cohort"],
     }),
     assignMentor: builder.mutation({

@@ -196,6 +196,7 @@ export default function SubmissionsPage() {
 
       {activeTab === "cockpit" ? (
         <MentorCockpitView
+          mentor={mentorCockpitData?.mentor}
           mentees={mentorCockpitData?.mentees || []}
           milestones={
             mentorCockpitData?.milestones || {
