@@ -216,7 +216,7 @@ export default function SubmissionsPage() {
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search by student, course, or lesson..."
+                placeholder="Search by student, email, or mentor..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
@@ -232,7 +232,7 @@ export default function SubmissionsPage() {
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
-                All ({submissionsAudit.length})
+                All Students
               </button>
               <button
                 onClick={() => setFilter("PENDING")}
@@ -242,9 +242,7 @@ export default function SubmissionsPage() {
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
-                Pending (
-                {submissionsAudit.filter((s: any) => s.status === "PENDING").length}
-                )
+                Pending Review
               </button>
               <button
                 onClick={() => setFilter("APPROVED")}
@@ -254,32 +252,22 @@ export default function SubmissionsPage() {
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
-                Approved
-              </button>
-              <button
-                onClick={() => setFilter("CHANGES_REQUESTED")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                  filter === "CHANGES_REQUESTED"
-                    ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-                }`}
-              >
-                Changes Requested
+                Evaluated
               </button>
             </div>
           </div>
 
-          {/* Submissions Table */}
+          {/* Student-Grouped Submissions Audit Table */}
           <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] overflow-hidden shadow-2xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50/50 dark:bg-[#070A11]/60">
                     <th className="p-4">Student</th>
-                    <th className="p-4">Course & Assignment</th>
                     <th className="p-4">Assigned Mentor</th>
-                    <th className="p-4">Deliverable Link</th>
-                    <th className="p-4">Status</th>
+                    <th className="p-4">Pending Deliverables</th>
+                    <th className="p-4">Total Submissions</th>
+                    <th className="p-4">Latest Activity</th>
                     <th className="p-4 text-right">Action</th>
                   </tr>
                 </thead>
@@ -287,88 +275,112 @@ export default function SubmissionsPage() {
                   {isLoadingSubmissions ? (
                     <tr>
                       <td colSpan={6} className="p-12 text-center text-slate-400">
-                        Loading student submissions audit from live database...
+                        Loading student submissions audit...
                       </td>
                     </tr>
-                  ) : submissionsAudit.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-12 text-center text-slate-400">
-                        {isMentor
-                          ? "No submissions from your assigned mentees found."
-                          : "No submissions found matching filter."}
-                      </td>
-                    </tr>
-                  ) : (
-                    submissionsAudit.map((sub: any) => (
+                  ) : (() => {
+                    // Group submissions by student
+                    const studentMap = new Map<string, any>();
+                    submissionsAudit.forEach((sub: any) => {
+                      const sKey = sub.studentId || sub.studentEmail || sub.studentName || "unknown";
+                      if (!studentMap.has(sKey)) {
+                        studentMap.set(sKey, {
+                          studentId: sub.studentId,
+                          studentName: sub.studentName || "Student",
+                          studentEmail: sub.studentEmail || "",
+                          studentPhone: sub.studentPhone || "",
+                          mentorName: sub.mentorName || "—",
+                          totalSubmissions: 0,
+                          pendingCount: 0,
+                          approvedCount: 0,
+                          latestDate: sub.createdAt,
+                          latestSub: sub,
+                        });
+                      }
+                      const entry = studentMap.get(sKey)!;
+                      entry.totalSubmissions += 1;
+                      if (sub.status === "PENDING" || sub.status === "SUBMITTED") {
+                        entry.pendingCount += 1;
+                      } else {
+                        entry.approvedCount += 1;
+                      }
+                      if (new Date(sub.createdAt) > new Date(entry.latestDate)) {
+                        entry.latestDate = sub.createdAt;
+                        entry.latestSub = sub;
+                      }
+                    });
+
+                    let studentList = Array.from(studentMap.values());
+                    if (filter === "PENDING") {
+                      studentList = studentList.filter((s) => s.pendingCount > 0);
+                    } else if (filter === "APPROVED") {
+                      studentList = studentList.filter((s) => s.pendingCount === 0 && s.approvedCount > 0);
+                    }
+
+                    if (studentList.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan={6} className="p-12 text-center text-slate-400">
+                            No student records found matching this filter.
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return studentList.map((st: any) => (
                       <tr
-                        key={sub.id}
+                        key={st.studentId || st.studentEmail}
                         className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
                       >
                         <td className="p-4 font-medium">
                           <div className="text-slate-900 dark:text-white font-bold">
-                            {sub.studentName || "Student"}
+                            {st.studentName}
                           </div>
                           <div className="text-[11px] text-slate-400 font-mono">
-                            {sub.studentEmail || sub.studentPhone || sub.studentId}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="text-slate-800 dark:text-slate-200 font-semibold">
-                            {sub.lessonTitle || sub.title}
-                          </div>
-                          <div className="text-[11px] text-slate-400">
-                            {sub.courseTitle}
+                            {st.studentEmail || st.studentPhone || st.studentId}
                           </div>
                         </td>
                         <td className="p-4">
                           <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {sub.mentorName || "—"}
+                            {st.mentorName}
                           </span>
-                        </td>
-                        <td className="p-4">
-                          {sub.submissionUrl ? (
-                            <a
-                              href={sub.submissionUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 hover:underline font-mono text-[11px]"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>View Deliverable</span>
-                            </a>
-                          ) : sub.codeSnippet ? (
-                            <span className="text-[11px] font-mono text-slate-400">
-                              Code submitted
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-slate-400 italic">No URL</span>
-                          )}
                         </td>
                         <td className="p-4">
                           <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              sub.status === "APPROVED"
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                                : sub.status === "CHANGES_REQUESTED"
-                                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                              st.pendingCount > 0
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                             }`}
                           >
-                            {sub.status}
+                            {st.pendingCount} Pending
                           </span>
+                        </td>
+                        <td className="p-4 font-medium text-slate-700 dark:text-slate-300">
+                          {st.totalSubmissions} Submitted
+                        </td>
+                        <td className="p-4 text-[11px] text-slate-400 font-mono">
+                          {st.latestDate ? new Date(st.latestDate).toLocaleDateString() : "Recent"}
                         </td>
                         <td className="p-4 text-right">
                           <button
-                            onClick={() => handleOpenReview(sub)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                            type="button"
+                            onClick={() => {
+                              if (st.latestSub) {
+                                handleOpenReview(st.latestSub);
+                              } else {
+                                setActiveTab("cockpit");
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-800 dark:text-white bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-500/20 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all cursor-pointer"
                           >
-                            <span>Grade & Review</span>
+                            <span>Review Submissions</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </button>
                         </td>
                       </tr>
-                    ))
-                  )}
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>

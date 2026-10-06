@@ -1453,29 +1453,6 @@ export default function EditCoursePage() {
               {/* ──────────────── MODE: PRACTICE (MCQ) ──────────────── */}
               {curriculumMode === "PRACTICE" && practiceType === "MCQ" && (
                 <div className="space-y-6">
-                  {/* Passing Score Box */}
-                  <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#070A11]/60">
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                        Passing Score Percentage
-                      </h4>
-                      <p className="text-[11px] text-slate-400">
-                        Score required for students to mark this practice quiz as mastered.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 font-mono">
-                      <input
-                        type="number"
-                        min={10}
-                        max={100}
-                        value={passingScore}
-                        onChange={(e) => setPassingScore(Number(e.target.value))}
-                        className="w-16 px-2.5 py-1 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B1120] text-center font-bold text-slate-900 dark:text-white"
-                      />
-                      <span className="text-xs text-slate-400">%</span>
-                    </div>
-                  </div>
-
                   {/* Questions List */}
                   <div className="space-y-4">
                     {questions.map((q, qIdx) => (
@@ -1506,29 +1483,68 @@ export default function EditCoursePage() {
                           className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                         />
 
-                        {/* 4 Choices */}
-                        <div className="space-y-2">
-                          <span className="text-[11px] text-slate-400 font-semibold">
-                            Choices (Select the radio button for the correct answer):
-                          </span>
-                          {q.options.map((opt, optIdx) => (
-                            <div key={optIdx} className="flex items-center gap-2.5">
-                              <input
-                                type="radio"
-                                name={`correct-${q.id}`}
-                                checked={q.correctOptionIndex === optIdx}
-                                onChange={() => setCorrectOption(qIdx, optIdx)}
-                                className="text-amber-500 focus:ring-amber-500"
-                              />
-                              <input
-                                type="text"
-                                value={opt}
-                                onChange={(e) => updateQuestionOption(qIdx, optIdx, e.target.value)}
-                                placeholder={`Option ${optIdx + 1}`}
-                                className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
-                              />
-                            </div>
-                          ))}
+                        {/* Choices with Explicit Correct Answer Selection */}
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                              Choices & Answer Key
+                            </span>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                              Click "Correct Answer" button to set the key
+                            </span>
+                          </div>
+                          {q.options.map((opt, optIdx) => {
+                            const isCorrect = q.correctOptionIndex === optIdx;
+                            const optionLetter = String.fromCharCode(65 + optIdx); // A, B, C, D
+                            return (
+                              <div
+                                key={optIdx}
+                                className={`flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 rounded-xl border transition-all ${
+                                  isCorrect
+                                    ? "border-emerald-500/80 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-2xs"
+                                    : "border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-[#070A11]"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <span
+                                    className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 ${
+                                      isCorrect
+                                        ? "bg-emerald-500 text-white"
+                                        : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                                    }`}
+                                  >
+                                    {optionLetter}
+                                  </span>
+                                  <input
+                                    type="text"
+                                    value={opt}
+                                    onChange={(e) => updateQuestionOption(qIdx, optIdx, e.target.value)}
+                                    placeholder={`Option ${optionLetter} text...`}
+                                    className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                                  />
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setCorrectOption(qIdx, optIdx)}
+                                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                                    isCorrect
+                                      ? "bg-emerald-600 text-white shadow-xs"
+                                      : "bg-white dark:bg-[#0B1120] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700"
+                                  }`}
+                                >
+                                  {isCorrect ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                      <span>Correct Answer</span>
+                                    </>
+                                  ) : (
+                                    <span>Set as Correct</span>
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
 
                         {/* Explanation */}

@@ -59,9 +59,6 @@ export default function AdminLayout() {
     ...(isMentor
       ? [{ name: "Mentor View", path: "/admin/submissions", icon: ClipboardCheck, badge: "Active" }]
       : []),
-    ...(isProgramManager
-      ? [{ name: "Media Files", path: "/admin/files", icon: FolderArchive, badge: "1" }]
-      : []),
     { name: "Students", path: "/admin/students", icon: Users },
   ];
 

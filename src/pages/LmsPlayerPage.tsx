@@ -1510,9 +1510,6 @@ export default function LmsPlayerPage() {
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Week Lessons</span>
                 </button>
-                <span className="text-xs font-extrabold uppercase px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300">
-                  Passing Score: 70%
-                </span>
               </div>
 
               <div>
