@@ -1,21 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import {
-  ClipboardCheck,
-  CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-  MessageSquare,
   Search,
-  Filter,
   User,
-  Clock,
-  X,
   Award,
-  Layers,
-  Sparkles,
   ArrowRight,
-  ShieldAlert,
 } from "lucide-react";
 import {
   useGetMentorCockpitQuery,
@@ -87,41 +76,7 @@ export default function SubmissionsPage() {
     }
   };
 
-  // Selected Submission for Review Modal
-  const [selectedSub, setSelectedSub] = useState<any | null>(null);
-  const [reviewStatus, setReviewStatus] = useState<"APPROVED" | "CHANGES_REQUESTED">("APPROVED");
-  const [reviewScore, setReviewScore] = useState<number>(85);
-  const [reviewFeedback, setReviewFeedback] = useState("");
-  const [gradingError, setGradingError] = useState<string | null>(null);
-
-  const handleOpenReview = (sub: any) => {
-    setSelectedSub(sub);
-    setReviewStatus(sub.status === "CHANGES_REQUESTED" ? "CHANGES_REQUESTED" : "APPROVED");
-    setReviewScore(sub.score || 85);
-    setReviewFeedback(sub.mentorFeedback || "");
-    setGradingError(null);
-  };
-
-  const handleSaveReview = async () => {
-    if (!selectedSub) return;
-    try {
-      setGradingError(null);
-      await gradeSubmissionApi({
-        id: selectedSub.id,
-        body: {
-          score: reviewStatus === "APPROVED" ? reviewScore : 40,
-          mentorFeedback: reviewFeedback,
-          status: reviewStatus === "APPROVED" ? "GRADED" : "CHANGES_REQUESTED",
-        },
-      }).unwrap();
-
-      refetchSubmissions();
-      refetchCockpit();
-      setSelectedSub(null);
-    } catch (err: any) {
-      setGradingError(err?.data?.error || "Failed to submit evaluation verdict.");
-    }
-  };
+  const [selectedMenteeId, setSelectedMenteeId] = useState<string | null>(null);
 
   return (
     <div className="p-5 sm:p-7 lg:p-8 space-y-6 max-w-[1560px] mx-auto animate-fade-in font-sans">
@@ -206,6 +161,7 @@ export default function SubmissionsPage() {
               atRisk: 0,
             }
           }
+          selectedMenteeId={selectedMenteeId}
           onGradeSubmission={handleGradeSubmission}
         />
       ) : (
@@ -366,11 +322,10 @@ export default function SubmissionsPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              if (st.latestSub) {
-                                handleOpenReview(st.latestSub);
-                              } else {
-                                setActiveTab("cockpit");
+                              if (st.studentId) {
+                                setSelectedMenteeId(st.studentId);
                               }
+                              setActiveTab("cockpit");
                             }}
                             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-800 dark:text-white bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-500/20 hover:text-sky-600 dark:hover:text-sky-400 rounded-xl transition-all cursor-pointer"
                           >
@@ -383,117 +338,6 @@ export default function SubmissionsPage() {
                   })()}
                 </tbody>
               </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Review & Grading Modal */}
-      {selectedSub && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B1120] rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-scale-in">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                Grade Submission: {selectedSub.studentName}
-              </h2>
-              <button
-                onClick={() => setSelectedSub(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {gradingError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 shrink-0" />
-                <span>{gradingError}</span>
-              </div>
-            )}
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#070A11] border border-slate-100 dark:border-slate-800/80 space-y-1">
-                <p className="font-bold text-slate-800 dark:text-slate-200">
-                  {selectedSub.lessonTitle || selectedSub.title}
-                </p>
-                <p className="text-slate-400">{selectedSub.courseTitle}</p>
-                {selectedSub.submissionUrl && (
-                  <a
-                    href={selectedSub.submissionUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-sky-500 hover:underline pt-1 font-mono"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    <span>Open Code Repository</span>
-                  </a>
-                )}
-                {selectedSub.submissionText && (
-                  <p className="text-slate-600 dark:text-slate-300 pt-1">
-                    {selectedSub.submissionText}
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Evaluation Verdict
-                  </label>
-                  <select
-                    value={reviewStatus}
-                    onChange={(e: any) => setReviewStatus(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/40"
-                  >
-                    <option value="APPROVED">APPROVED (Pass Milestone)</option>
-                    <option value="CHANGES_REQUESTED">CHANGES_REQUESTED (Resubmit)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Score / 100
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={reviewScore}
-                    onChange={(e) => setReviewScore(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/40"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Mentor Feedback & Viva Notes
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Provide concrete architecture observations, code feedback, and milestone tips..."
-                  value={reviewFeedback}
-                  onChange={(e) => setReviewFeedback(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setSelectedSub(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isGrading}
-                onClick={handleSaveReview}
-                className="px-4 py-2 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 disabled:opacity-50 rounded-xl transition-all shadow-xs cursor-pointer"
-              >
-                {isGrading ? "Saving..." : "Save Evaluation"}
-              </button>
             </div>
           </div>
         </div>

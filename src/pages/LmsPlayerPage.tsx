@@ -318,6 +318,27 @@ export default function LmsPlayerPage() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState<number | null>(null);
 
+  // Lesson Type Resolution Flags
+  const isFolder = selectedLesson?.type === "folder" || (selectedLesson as any)?.category === "FOLDER";
+  const isVideo = !isFolder && selectedLesson?.type === "video";
+  const isQuiz = !isFolder && selectedLesson?.type === "quiz";
+  const isCodingTest =
+    !isFolder &&
+    ((selectedLesson as any)?.type === "coding_test" ||
+    (selectedLesson as any)?.type === "code" ||
+    ((selectedLesson as any)?.category === "TEST" && (selectedLesson as any)?.type === "code"));
+  const isSubjectiveOrVideoTest =
+    !isFolder &&
+    ((selectedLesson as any)?.type === "subjective_test" ||
+    (selectedLesson as any)?.type === "video_test" ||
+    ((selectedLesson as any)?.category === "TEST" && ((selectedLesson as any)?.type === "video_test" || (selectedLesson as any)?.type === "subjective_test")));
+  const isAssignment =
+    !isFolder &&
+    !isVideo &&
+    !isQuiz &&
+    !isCodingTest &&
+    !isSubjectiveOrVideoTest;
+
   // Reset quiz state when switching lessons
   useEffect(() => {
     setQuizAnswers({});
@@ -333,8 +354,8 @@ export default function LmsPlayerPage() {
 
   // Existing submission check from backend API
   useEffect(() => {
-    if (selectedLesson && selectedLesson.type === "assignment") {
-      const existing = (submissionsData || []).find((s: any) => s.lessonId === selectedLesson.id);
+    if (selectedLesson && (selectedLesson.type === "assignment" || isAssignment)) {
+      const existing = (submissionsData || []).find((s: any) => s.lessonId === selectedLesson.id || s.assignmentId === selectedLesson.id);
       if (existing) {
         setAssignmentSubmitted(true);
         setAssignmentRepoUrl(existing.submissionUrl || "");
@@ -345,10 +366,14 @@ export default function LmsPlayerPage() {
           setAssignmentSubmitted(true);
           setAssignmentRepoUrl(local.submissionUrl);
           setAssignmentNotes(local.submissionText || "");
+        } else {
+          setAssignmentSubmitted(false);
+          setAssignmentRepoUrl("");
+          setAssignmentNotes("");
         }
       }
     }
-  }, [selectedLesson, submissionsData]);
+  }, [selectedLesson, submissionsData, isAssignment]);
 
   // Notes state & Backend persistence
   const { data: notesData = [] } = useGetNotesQuery(pathwayId);
@@ -1212,25 +1237,6 @@ export default function LmsPlayerPage() {
     );
   }
 
-  const isFolder = selectedLesson?.type === "folder" || (selectedLesson as any)?.category === "FOLDER";
-  const isVideo = !isFolder && selectedLesson?.type === "video";
-  const isQuiz = !isFolder && selectedLesson?.type === "quiz";
-  const isAssignment =
-    !isFolder &&
-    selectedLesson?.type === "assignment" &&
-    (selectedLesson as any)?.category !== "TEST" &&
-    (selectedLesson as any)?.type !== "coding_test";
-  const isCodingTest =
-    !isFolder &&
-    ((selectedLesson as any)?.type === "coding_test" ||
-    (selectedLesson as any)?.type === "code" ||
-    ((selectedLesson as any)?.category === "TEST" && (selectedLesson as any)?.type === "code"));
-  const isSubjectiveOrVideoTest =
-    !isFolder &&
-    ((selectedLesson as any)?.type === "subjective_test" ||
-    (selectedLesson as any)?.type === "video_test" ||
-    ((selectedLesson as any)?.category === "TEST" && (selectedLesson as any)?.type === "video"));
-
   const handleAssessmentCodeSubmit = async (code: string, testSummary: any) => {
     markLessonComplete(selectedLesson.id);
     try {
@@ -1635,8 +1641,16 @@ export default function LmsPlayerPage() {
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Curriculum Module</span>
                 </button>
-                <span className="text-xs font-extrabold uppercase px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">
-                  Practical Deliverable
+                <span
+                  className={`text-xs font-extrabold uppercase px-2.5 py-1 rounded-full border ${
+                    (selectedLesson as any)?.category === "TEST"
+                      ? "bg-sky-50 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-500/30"
+                      : "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30"
+                  }`}
+                >
+                  {(selectedLesson as any)?.category === "TEST"
+                    ? "Capstone Project Deliverable"
+                    : "Practical Deliverable"}
                 </span>
               </div>
 
@@ -1645,17 +1659,21 @@ export default function LmsPlayerPage() {
                   {selectedLesson.title}
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Complete the hands-on project tasks and submit your implementation repository link.
+                  {(selectedLesson as any)?.category === "TEST"
+                    ? "Complete your capstone project deliverable according to specifications and submit your repository link for mentor review."
+                    : "Complete the hands-on project tasks and submit your implementation repository link."}
                 </p>
               </div>
 
-              {/* Lab Instructions Box */}
+              {/* Lab / Capstone Instructions Box */}
               <div className="bg-slate-50 dark:bg-[#070A11] rounded-2xl p-5 border border-slate-200/80 dark:border-sky-500/20 space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">
-                  Lab Specification & Deliverable Requirements
+                  {(selectedLesson as any)?.category === "TEST"
+                    ? "Project Specification & Deliverable Requirements"
+                    : "Lab Specification & Deliverable Requirements"}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed font-medium">
-                  {selectedLesson.instructions || selectedLesson.description}
+                  {selectedLesson.instructions || selectedLesson.description || "Review the project specifications and submit your deliverable repository or deployment link below."}
                 </p>
               </div>
 
@@ -1663,10 +1681,14 @@ export default function LmsPlayerPage() {
                 <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/40 text-emerald-900 dark:text-emerald-200 space-y-2">
                   <div className="flex items-center gap-2 font-bold text-sm">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
-                    <span>Lab Deliverable Submitted!</span>
+                    <span>
+                      {(selectedLesson as any)?.category === "TEST"
+                        ? "Capstone Project Submitted!"
+                        : "Lab Deliverable Submitted!"}
+                    </span>
                   </div>
                   <p className="text-xs opacity-90">
-                    Your code has been queued for mentor evaluation. Submission URL:{" "}
+                    Your deliverable has been queued for mentor evaluation. Submission URL:{" "}
                     <a
                       href={assignmentRepoUrl}
                       target="_blank"
@@ -1715,7 +1737,9 @@ export default function LmsPlayerPage() {
                     type="submit"
                     className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-3 px-8 rounded-xl shadow-md transition-all cursor-pointer"
                   >
-                    Submit Lab Deliverable
+                    {(selectedLesson as any)?.category === "TEST"
+                      ? "Submit Capstone Project Deliverable"
+                      : "Submit Lab Deliverable"}
                   </button>
                 </form>
               )}

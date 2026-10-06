@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Users,
   CheckCircle2,
@@ -29,6 +29,7 @@ interface Mentee {
   status: "NEEDS_REVIEW" | "ON_TRACK" | "AT_RISK";
   lastActive: string;
   latestSubmission?: any;
+  submissions?: any[];
 }
 
 interface MentorCockpitProps {
@@ -48,6 +49,7 @@ interface MentorCockpitProps {
     pendingReview: number;
     atRisk: number;
   };
+  selectedMenteeId?: string | null;
   onGradeSubmission?: (menteeId: string, submissionId: string, score: number, feedback: string) => void;
 }
 
@@ -55,28 +57,61 @@ export default function MentorCockpitView({
   mentor,
   mentees,
   milestones,
+  selectedMenteeId,
   onGradeSubmission,
 }: MentorCockpitProps) {
-  const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(mentees[0] || null);
+  const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
   const [gradeScore, setGradeScore] = useState<number>(85);
   const [mentorFeedback, setMentorFeedback] = useState<string>("");
   const [submittedFeedbackSuccess, setSubmittedFeedbackSuccess] = useState<boolean>(false);
 
   useEffect(() => {
-    setSelectedMentee(mentees[0] || null);
-  }, [mentees]);
+    if (selectedMenteeId) {
+      const match = mentees.find((m) => m.id === selectedMenteeId);
+      if (match) {
+        setSelectedMentee(match);
+        return;
+      }
+    }
+    if (!selectedMentee || !mentees.some((m) => m.id === selectedMentee.id)) {
+      setSelectedMentee(mentees[0] || null);
+    }
+  }, [mentees, selectedMenteeId]);
+
+  const menteeSubmissions: any[] = useMemo(() => {
+    if (!selectedMentee) return [];
+    if (Array.isArray(selectedMentee.submissions) && selectedMentee.submissions.length > 0) {
+      return selectedMentee.submissions;
+    }
+    return selectedMentee.latestSubmission ? [selectedMentee.latestSubmission] : [];
+  }, [selectedMentee]);
 
   useEffect(() => {
-    if (selectedMentee?.latestSubmission) {
-      setGradeScore(selectedMentee.latestSubmission.score || 85);
-      setMentorFeedback(selectedMentee.latestSubmission.mentorFeedback || "");
+    if (menteeSubmissions.length > 0) {
+      const exists = menteeSubmissions.find((s) => s.id === selectedSubmissionId);
+      if (!exists) {
+        setSelectedSubmissionId(menteeSubmissions[0].id);
+      }
+    } else {
+      setSelectedSubmissionId(null);
+    }
+  }, [menteeSubmissions]);
+
+  const activeSubmission = useMemo(() => {
+    if (!menteeSubmissions.length) return null;
+    return menteeSubmissions.find((s) => s.id === selectedSubmissionId) || menteeSubmissions[0] || null;
+  }, [menteeSubmissions, selectedSubmissionId]);
+
+  useEffect(() => {
+    if (activeSubmission) {
+      setGradeScore(activeSubmission.score || 85);
+      setMentorFeedback(activeSubmission.mentorFeedback || "");
     } else {
       setGradeScore(85);
       setMentorFeedback("");
     }
-  }, [selectedMentee]);
-
-  const activeSubmission = selectedMentee?.latestSubmission || null;
+  }, [activeSubmission]);
 
   const handleGradeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,6 +315,52 @@ export default function MentorCockpitView({
                     </span>
                   </div>
                 </div>
+
+                {/* Individual Deliverables Selector */}
+                {menteeSubmissions.length > 0 && (
+                  <div className="space-y-2 pb-1 border-b border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Individual Submissions ({menteeSubmissions.length})
+                      </span>
+                      <span className="text-[10px] text-slate-400">Click any deliverable to inspect & grade</span>
+                    </div>
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1.5">
+                      {menteeSubmissions.map((sub: any, idx: number) => {
+                        const isSubActive = activeSubmission?.id === sub.id;
+                        const isPending =
+                          sub.status === "PENDING" ||
+                          sub.status === "SUBMITTED" ||
+                          sub.status === "UNDER_REVIEW";
+                        return (
+                          <button
+                            key={sub.id || idx}
+                            type="button"
+                            onClick={() => setSelectedSubmissionId(sub.id)}
+                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 border cursor-pointer ${
+                              isSubActive
+                                ? "bg-sky-500/15 border-sky-500/50 text-sky-700 dark:text-sky-300 shadow-2xs"
+                                : "bg-slate-50 dark:bg-[#070A11] border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700"
+                            }`}
+                          >
+                            <span className="truncate max-w-[200px]">
+                              {sub.title || `Deliverable #${idx + 1}`}
+                            </span>
+                            <span
+                              className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${
+                                isPending
+                                  ? "bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                                  : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                              }`}
+                            >
+                              {isPending ? "Pending" : `${sub.score ?? 85}/100`}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Real Deliverable Section */}
                 {activeSubmission ? (
