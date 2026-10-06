@@ -275,15 +275,6 @@ export default function MentorCockpitView({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <a
-                      href="https://calendar.google.com"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5 text-sky-500" />
-                      <span>Huddle</span>
-                    </a>
                     <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
                       Active: {selectedMentee.lastActive}
                     </span>
@@ -306,6 +297,33 @@ export default function MentorCockpitView({
                         {activeSubmission.createdAt ? new Date(activeSubmission.createdAt).toLocaleString() : "Submitted"}
                       </span>
                     </div>
+
+                    {/* Status Pill */}
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
+                      <span className="text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 stroke-[2.5]" />
+                        <span>Submission Status: {activeSubmission.status || "COMPLETED"}</span>
+                      </span>
+                      {activeSubmission.score !== null && activeSubmission.score !== undefined && (
+                        <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          Score: {activeSubmission.score}/100
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Student Quiz Answers (for MCQs) */}
+                    {(activeSubmission.type?.toLowerCase() === "quiz" ||
+                      activeSubmission.title?.toLowerCase().includes("quiz") ||
+                      (activeSubmission.submissionText && activeSubmission.submissionText.includes("Question"))) && (
+                      <div className="space-y-2.5">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          Selected Choices & Answers
+                        </span>
+                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#070A11] border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap font-mono leading-relaxed">
+                          {activeSubmission.submissionText || "Student completed quiz submission."}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Code Snippet Box if available */}
                     {activeSubmission.codeSnippet && (
@@ -332,80 +350,75 @@ export default function MentorCockpitView({
                       </div>
                     )}
 
-                    {activeSubmission.submissionText && (
-                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
-                        {activeSubmission.submissionText}
-                      </div>
-                    )}
-
-                    {/* Status Pill */}
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
-                      <span className="text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-sky-500 stroke-[2.5]" />
-                        <span>Submission Status: {activeSubmission.status}</span>
-                      </span>
-                      {activeSubmission.score !== null && activeSubmission.score !== undefined && (
-                        <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          Current Score: {activeSubmission.score}/100
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Live Grading & Feedback Form */}
-                    <form onSubmit={handleGradeSubmit} className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <label className="text-xs font-bold text-slate-900 dark:text-white">
-                          Award Milestone Score
-                        </label>
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="range"
-                            min={0}
-                            max={100}
-                            value={gradeScore}
-                            onChange={(e) => setGradeScore(Number(e.target.value))}
-                            className="w-44 accent-sky-500"
-                          />
-                          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
-                            {gradeScore} / 100
-                          </span>
+                    {/* Submission Notes for non-quiz tasks */}
+                    {activeSubmission.submissionText &&
+                      activeSubmission.type?.toLowerCase() !== "quiz" &&
+                      !activeSubmission.title?.toLowerCase().includes("quiz") &&
+                      !activeSubmission.submissionText.includes("Question") && (
+                        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                          {activeSubmission.submissionText}
                         </div>
-                      </div>
+                      )}
 
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                          Mentor Architecture & Viva Notes
-                        </label>
-                        <textarea
-                          rows={3}
-                          placeholder="Write detailed critique, feedback notes, or recommendations for the learner..."
-                          value={mentorFeedback}
-                          onChange={(e) => setMentorFeedback(e.target.value)}
-                          className="w-full text-xs p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
-                        />
-                      </div>
+                    {/* Simple Grading Form for Evaluated Projects / Labs only (Not Quiz) */}
+                    {activeSubmission.type?.toLowerCase() !== "quiz" &&
+                      !activeSubmission.title?.toLowerCase().includes("quiz") &&
+                      !activeSubmission.submissionText?.includes("Question") && (
+                        <form onSubmit={handleGradeSubmit} className="space-y-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <label className="text-xs font-bold text-slate-900 dark:text-white">
+                              Score
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="range"
+                                min={0}
+                                max={100}
+                                value={gradeScore}
+                                onChange={(e) => setGradeScore(Number(e.target.value))}
+                                className="w-44 accent-sky-500"
+                              />
+                              <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                                {gradeScore} / 100
+                              </span>
+                            </div>
+                          </div>
 
-                      <div className="flex items-center justify-between pt-2">
-                        {submittedFeedbackSuccess ? (
-                          <span className="text-xs font-bold text-emerald-500 flex items-center gap-1">
-                            <Check className="w-4 h-4 stroke-[3]" />
-                            <span>Score & Feedback Recorded!</span>
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-slate-400">
-                            Directly syncs to learner's course progress and milestone records.
-                          </span>
-                        )}
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                              Feedback & Notes
+                            </label>
+                            <textarea
+                              rows={3}
+                              placeholder="Write feedback for the student..."
+                              value={mentorFeedback}
+                              onChange={(e) => setMentorFeedback(e.target.value)}
+                              className="w-full text-xs p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                            />
+                          </div>
 
-                        <button
-                          type="submit"
-                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-400 hover:bg-sky-300 text-slate-950 text-xs font-bold transition-all shadow-xs cursor-pointer"
-                        >
-                          <Send className="w-3.5 h-3.5 stroke-[2.5]" />
-                          <span>Publish Evaluation</span>
-                        </button>
-                      </div>
-                    </form>
+                          <div className="flex items-center justify-between pt-1">
+                            {submittedFeedbackSuccess ? (
+                              <span className="text-xs font-bold text-emerald-500 flex items-center gap-1">
+                                <Check className="w-4 h-4 stroke-[3]" />
+                                <span>Feedback Saved!</span>
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-slate-400">
+                                Syncs to student course progress.
+                              </span>
+                            )}
+
+                            <button
+                              type="submit"
+                              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-sky-400 hover:bg-sky-300 text-slate-950 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                            >
+                              <Send className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <span>Save Evaluation</span>
+                            </button>
+                          </div>
+                        </form>
+                      )}
                   </div>
                 ) : (
                   <div className="py-12 px-6 rounded-2xl bg-slate-50/50 dark:bg-[#070A11] border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3">

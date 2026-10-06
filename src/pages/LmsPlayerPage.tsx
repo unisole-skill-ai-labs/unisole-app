@@ -473,18 +473,37 @@ export default function LmsPlayerPage() {
     setQuizScore(percent);
     setQuizSubmitted(true);
 
+    const answersBreakdown = (selectedLesson.questions || [])
+      .map((q, idx) => {
+        const userOptIdx = quizAnswers[q.id];
+        const userSelectedText =
+          userOptIdx !== undefined && q.options[userOptIdx] ? q.options[userOptIdx] : "Not selected";
+        const isCorrect = userOptIdx === q.correctOptionIndex;
+        return `Question ${idx + 1}: ${q.question}\n• Student Selected: ${userSelectedText} ${isCorrect ? "✓ (Correct)" : "✗ (Incorrect)"}`;
+      })
+      .join("\n\n");
+
     try {
       await submitAssignmentApi({
         lessonId: selectedLesson.id,
         pathwayId,
         type: "quiz",
         title: selectedLesson.title,
+        submissionText: answersBreakdown,
         score: percent,
-        status: percent >= 60 ? "APPROVED" : "COMPLETED",
+        status: "COMPLETED",
       }).unwrap();
     } catch {
       // Fallback
     }
+
+    saveSubmission({
+      assignmentId: selectedLesson.id,
+      courseTitle: courseTitle,
+      lessonTitle: selectedLesson.title,
+      submissionText: answersBreakdown,
+      submissionUrl: "",
+    });
 
     markLessonComplete(selectedLesson.id);
   };
@@ -1505,33 +1524,28 @@ export default function LmsPlayerPage() {
                 </p>
               </div>
 
-              {quizScore !== null && (
-                <div
-                  className={`p-4 rounded-2xl border flex items-center justify-between ${
-                    quizScore >= 70
-                      ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-900 dark:text-emerald-200"
-                      : "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-900 dark:text-rose-200"
-                  }`}
-                >
+              {quizSubmitted && (
+                <div className="p-4 rounded-2xl border bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-900 dark:text-emerald-200 flex items-center justify-between animate-fade-in shadow-2xs">
                   <div className="flex items-center gap-3">
-                    <Award className="w-6 h-6 stroke-[2]" />
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <Check className="w-4 h-4 stroke-[3]" />
+                    </div>
                     <div>
-                      <h4 className="text-sm font-bold">
-                        {quizScore >= 70 ? "Quiz Passed!" : "Needs Review"} — Score: {quizScore}%
+                      <h4 className="text-xs sm:text-sm font-bold">
+                        Submitted
                       </h4>
-                      <p className="text-xs opacity-90">
-                        {quizScore >= 70
-                          ? "Great job! This assessment has been credited to your progress."
-                          : "Review the lecture notes and try again."}
+                      <p className="text-[11px] text-emerald-800 dark:text-emerald-300">
+                        Your quiz answers have been recorded and submitted.
                       </p>
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => {
                       setQuizSubmitted(false);
                       setQuizScore(null);
                     }}
-                    className="text-xs font-bold underline cursor-pointer"
+                    className="text-xs font-bold text-emerald-700 dark:text-emerald-300 underline hover:text-emerald-900 dark:hover:text-emerald-100 cursor-pointer"
                   >
                     Retake Quiz
                   </button>
