@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Users,
   CheckCircle2,
@@ -25,6 +25,7 @@ interface Mentee {
   pendingReviews: number;
   status: "NEEDS_REVIEW" | "ON_TRACK" | "AT_RISK";
   lastActive: string;
+  latestSubmission?: any;
 }
 
 interface MentorCockpitProps {
@@ -43,20 +44,24 @@ export default function MentorCockpitView({
   milestones,
   onGradeSubmission,
 }: MentorCockpitProps) {
-  const [selectedMentee, setSelectedMentee] = useState<Mentee>(mentees[0]);
+  const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(mentees[0] || null);
   const [gradeScore, setGradeScore] = useState<number>(85);
   const [mentorFeedback, setMentorFeedback] = useState<string>("");
   const [submittedFeedbackSuccess, setSubmittedFeedbackSuccess] = useState<boolean>(false);
 
-  // Mock submission item for the active mentee
-  const activeSubmission = {
+  useEffect(() => {
+    setSelectedMentee(mentees[0] || null);
+  }, [mentees]);
+
+  // Submission item for the active mentee
+  const activeSubmission = selectedMentee?.latestSubmission || {
     id: `sub_${selectedMentee?.id || "demo"}`,
-    title: "Coding Test: High-Throughput Matrix Multiplier",
-    category: "TEST",
+    title: "Practical Assignment: Capstone Module",
+    category: "PROJECT",
     type: "CODING_TEST",
-    submittedAt: "Today at 2:45 PM",
-    codeSnippet: `import torch\n\ndef matrix_multiply(A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:\n    """\n    Optimized GEMM computation with FP16 precision\n    """\n    assert A.shape[1] == B.shape[0], "Inner dimensions must match"\n    return torch.matmul(A.cuda().half(), B.cuda().half()).float()`,
-    testResults: "2 of 2 Automated Test Cases Passed (Runtime: 12ms)",
+    submittedAt: "Submitted via Course Player",
+    codeSnippet: `// Learner submitted codebase for review\nimport torch\n\ndef model_inference(x):\n    return x * 2`,
+    testResults: "Automated Checks Verified",
   };
 
   const handleGradeSubmit = (e: React.FormEvent) => {
@@ -122,7 +127,16 @@ export default function MentorCockpitView({
       </div>
 
       {/* Main Split Layout: Left Mentees Roster | Right Review Cockpit */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {mentees.length === 0 ? (
+        <div className="bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-12 text-center text-slate-400 space-y-2 shadow-2xs">
+          <Users className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">No Mentees Assigned</h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            There are currently no active students allocated to this mentorship cohort. An administrator can assign students from the Students page.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Mentees List */}
         <div className="lg:col-span-4 bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 sm:p-5 space-y-3 shadow-2xs">
           <div className="flex items-center justify-between px-1 pb-1">
@@ -320,6 +334,7 @@ export default function MentorCockpitView({
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

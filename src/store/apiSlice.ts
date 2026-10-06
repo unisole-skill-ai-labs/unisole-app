@@ -429,8 +429,18 @@ export const apiSlice = createApi({
       providesTags: ["Cohort"],
     }),
     getMentorCockpit: builder.query({
-      query: () => "/api/lms/mentor/cockpit",
+      query: (params) => ({
+        url: "/api/lms/mentor/cockpit",
+        params,
+      }),
       providesTags: ["Cohort", "Submissions"],
+    }),
+    getSubmissionsAudit: builder.query({
+      query: (params) => ({
+        url: "/api/lms/submissions/audit",
+        params,
+      }),
+      providesTags: ["Submissions"],
     }),
 
     // Admin Mentorship Allocation Endpoints (Admin-only mutations)
@@ -546,6 +556,7 @@ export const {
   // Mentorship & Assessment Studio hooks
   useGetStudentMentorQuery,
   useGetMentorCockpitQuery,
+  useGetSubmissionsAuditQuery,
   useGetAdminMentorsQuery,
   useAssignMentorMutation,
   useUnassignMentorMutation,

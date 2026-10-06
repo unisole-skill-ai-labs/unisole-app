@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import {
   ClipboardCheck,
@@ -15,22 +15,59 @@ import {
   Layers,
   Sparkles,
   ArrowRight,
+  ShieldAlert,
 } from "lucide-react";
-import { StudentSubmission } from "../../types";
-import { getSubmissions, updateSubmissionReview } from "../../utils/submissionsStorage";
-import { useGetMentorCockpitQuery, useGradeSubmissionMutation } from "../../store/apiSlice";
+import {
+  useGetMentorCockpitQuery,
+  useGetSubmissionsAuditQuery,
+  useGetAdminMentorsQuery,
+  useGradeSubmissionMutation,
+} from "../../store/apiSlice";
 import MentorCockpitView from "../../components/lms/MentorCockpitView";
 
 export default function SubmissionsPage() {
   const { user } = useSelector((state: any) => state.auth);
-  const [activeTab, setActiveTab] = useState<"cockpit" | "table">("cockpit");
-  const [filter, setFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "CHANGES_REQUESTED">(
-    "ALL"
-  );
-  const [search, setSearch] = useState("");
 
-  const { data: mentorCockpitData, refetch: refetchCockpit } = useGetMentorCockpitQuery(undefined);
-  const [gradeSubmissionApi] = useGradeSubmissionMutation();
+  const userRoles: string[] = useMemo(() => {
+    const primary = (user?.role || "").toUpperCase();
+    const secondary = Array.isArray(user?.roles)
+      ? user.roles.map((r: any) => String(r).toUpperCase())
+      : Array.isArray(user?.metadata?.roles)
+      ? user.metadata.roles.map((r: any) => String(r).toUpperCase())
+      : [];
+    return [primary, ...secondary];
+  }, [user]);
+
+  const isAdmin = userRoles.includes("SUPER_ADMIN") || userRoles.includes("ADMIN");
+  const isProgramManager = userRoles.includes("PROGRAM_MANAGER") && !isAdmin;
+  const isMentor = userRoles.includes("MENTOR") && !isAdmin;
+
+  const [activeTab, setActiveTab] = useState<"cockpit" | "table">("cockpit");
+  const [filter, setFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "CHANGES_REQUESTED">("ALL");
+  const [search, setSearch] = useState("");
+  const [selectedMentorId, setSelectedMentorId] = useState<string>("ALL");
+
+  // Fetch live mentors from DB (for Program Manager & Admin)
+  const { data: mentors = [] } = useGetAdminMentorsQuery(undefined, {
+    skip: isMentor,
+  });
+
+  // Queries
+  const { data: mentorCockpitData, refetch: refetchCockpit } = useGetMentorCockpitQuery(
+    selectedMentorId !== "ALL" ? { mentorId: selectedMentorId } : undefined
+  );
+
+  const {
+    data: submissionsAudit = [],
+    isLoading: isLoadingSubmissions,
+    refetch: refetchSubmissions,
+  } = useGetSubmissionsAuditQuery({
+    status: filter !== "ALL" ? filter : undefined,
+    mentorId: selectedMentorId !== "ALL" ? selectedMentorId : undefined,
+    search: search ? search : undefined,
+  });
+
+  const [gradeSubmissionApi, { isLoading: isGrading }] = useGradeSubmissionMutation();
 
   const handleGradeSubmission = async (
     menteeId: string,
@@ -41,47 +78,50 @@ export default function SubmissionsPage() {
     try {
       await gradeSubmissionApi({
         id: submissionId,
-        body: { score, mentorFeedback: feedback },
+        body: { score, mentorFeedback: feedback, status: "GRADED" },
       }).unwrap();
       refetchCockpit();
+      refetchSubmissions();
     } catch {
       // Non-critical fallback
     }
   };
 
-  const [submissions, setSubmissions] = useState<StudentSubmission[]>(() => getSubmissions());
-
   // Selected Submission for Review Modal
-  const [selectedSub, setSelectedSub] = useState<StudentSubmission | null>(null);
+  const [selectedSub, setSelectedSub] = useState<any | null>(null);
   const [reviewStatus, setReviewStatus] = useState<"APPROVED" | "CHANGES_REQUESTED">("APPROVED");
+  const [reviewScore, setReviewScore] = useState<number>(85);
   const [reviewFeedback, setReviewFeedback] = useState("");
+  const [gradingError, setGradingError] = useState<string | null>(null);
 
-  const handleOpenReview = (sub: StudentSubmission) => {
+  const handleOpenReview = (sub: any) => {
     setSelectedSub(sub);
     setReviewStatus(sub.status === "CHANGES_REQUESTED" ? "CHANGES_REQUESTED" : "APPROVED");
+    setReviewScore(sub.score || 85);
     setReviewFeedback(sub.mentorFeedback || "");
+    setGradingError(null);
   };
 
-  const handleSaveReview = () => {
+  const handleSaveReview = async () => {
     if (!selectedSub) return;
-    updateSubmissionReview(
-      selectedSub.id,
-      reviewStatus,
-      reviewFeedback,
-      user?.name || "Mentor"
-    );
-    setSubmissions(getSubmissions());
-    setSelectedSub(null);
-  };
+    try {
+      setGradingError(null);
+      await gradeSubmissionApi({
+        id: selectedSub.id,
+        body: {
+          score: reviewStatus === "APPROVED" ? reviewScore : 40,
+          mentorFeedback: reviewFeedback,
+          status: reviewStatus === "APPROVED" ? "GRADED" : "CHANGES_REQUESTED",
+        },
+      }).unwrap();
 
-  const filteredSubmissions = submissions.filter((s) => {
-    const matchesFilter = filter === "ALL" ? true : s.status === filter;
-    const matchesSearch =
-      (s.studentName || "").toLowerCase().includes(search.toLowerCase()) ||
-      (s.courseTitle || "").toLowerCase().includes(search.toLowerCase()) ||
-      (s.lessonTitle || "").toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+      refetchSubmissions();
+      refetchCockpit();
+      setSelectedSub(null);
+    } catch (err: any) {
+      setGradingError(err?.data?.error || "Failed to submit evaluation verdict.");
+    }
+  };
 
   return (
     <div className="p-5 sm:p-7 lg:p-8 space-y-6 max-w-[1560px] mx-auto animate-fade-in font-sans">
@@ -90,34 +130,67 @@ export default function SubmissionsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
             <Award className="w-5 h-5 text-sky-500" />
-            <span>Mentorship Cockpit & Evaluations</span>
+            <span>
+              {isMentor
+                ? "Mentorship Cockpit & Evaluations"
+                : isProgramManager
+                ? "Program Manager Mentorship Hub"
+                : "Mentorship Cockpit & Evaluations"}
+            </span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Track student milestones, evaluate coding deliverables, and grade assessment vivas.
+            {isMentor
+              ? "Evaluate deliverables, submit viva marks, and guide your assigned mentees."
+              : isProgramManager
+              ? "Program Manager view: Monitor live mentor cohorts and review deliverables submitted across mentors."
+              : "Platform view: Track student milestones, evaluate coding deliverables, and audit assessment vivas."}
           </p>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-[#0B1120] p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80 self-start md:self-auto">
-          <button
-            onClick={() => setActiveTab("cockpit")}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-              activeTab === "cockpit"
-                ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-            }`}
-          >
-            Mentorship Cockpit
-          </button>
-          <button
-            onClick={() => setActiveTab("table")}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-              activeTab === "table"
-                ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-            }`}
-          >
-            Submissions Audit ({submissions.length})
-          </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Mentor Selector for Program Manager & Admin */}
+          {(isProgramManager || isAdmin) && (
+            <div className="flex items-center gap-2 bg-white dark:bg-[#0B1120] px-3.5 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 text-xs shadow-2xs">
+              <User className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+              <span className="text-slate-400 font-medium">Cohort Mentor:</span>
+              <select
+                value={selectedMentorId}
+                onChange={(e) => setSelectedMentorId(e.target.value)}
+                className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">All Mentors (Full Cohort)</option>
+                {mentors.map((m: any) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.activeMenteesCount || 0} Mentees)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Tab Switcher */}
+          <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-[#0B1120] p-1 rounded-xl border border-slate-200/80 dark:border-slate-800/80">
+            <button
+              onClick={() => setActiveTab("cockpit")}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                activeTab === "cockpit"
+                  ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+              }`}
+            >
+              Mentorship Cockpit
+            </button>
+            <button
+              onClick={() => setActiveTab("table")}
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                activeTab === "table"
+                  ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-2xs"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+              }`}
+            >
+              Submissions Audit ({submissionsAudit.length})
+            </button>
+          </div>
         </div>
       </div>
 
@@ -126,10 +199,10 @@ export default function SubmissionsPage() {
           mentees={mentorCockpitData?.mentees || []}
           milestones={
             mentorCockpitData?.milestones || {
-              submitted: 7,
-              evaluated: 6,
-              pendingReview: 4,
-              atRisk: 5,
+              submitted: 0,
+              evaluated: 0,
+              pendingReview: 0,
+              atRisk: 0,
             }
           }
           onGradeSubmission={handleGradeSubmission}
@@ -158,7 +231,7 @@ export default function SubmissionsPage() {
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
-                All ({submissions.length})
+                All ({submissionsAudit.length})
               </button>
               <button
                 onClick={() => setFilter("PENDING")}
@@ -168,7 +241,9 @@ export default function SubmissionsPage() {
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
-                Pending ({submissions.filter((s) => s.status === "PENDING").length})
+                Pending (
+                {submissionsAudit.filter((s: any) => s.status === "PENDING").length}
+                )
               </button>
               <button
                 onClick={() => setFilter("APPROVED")}
@@ -201,39 +276,53 @@ export default function SubmissionsPage() {
                   <tr className="border-b border-slate-100 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50/50 dark:bg-[#070A11]/60">
                     <th className="p-4">Student</th>
                     <th className="p-4">Course & Assignment</th>
-                    <th className="p-4">Submission Link</th>
+                    <th className="p-4">Assigned Mentor</th>
+                    <th className="p-4">Deliverable Link</th>
                     <th className="p-4">Status</th>
                     <th className="p-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
-                  {filteredSubmissions.length === 0 ? (
+                  {isLoadingSubmissions ? (
                     <tr>
-                      <td colSpan={5} className="p-12 text-center text-slate-400">
-                        No submissions found matching filter.
+                      <td colSpan={6} className="p-12 text-center text-slate-400">
+                        Loading student submissions audit from live database...
+                      </td>
+                    </tr>
+                  ) : submissionsAudit.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-12 text-center text-slate-400">
+                        {isMentor
+                          ? "No submissions from your assigned mentees found."
+                          : "No submissions found matching filter."}
                       </td>
                     </tr>
                   ) : (
-                    filteredSubmissions.map((sub) => (
+                    submissionsAudit.map((sub: any) => (
                       <tr
                         key={sub.id}
                         className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors"
                       >
                         <td className="p-4 font-medium">
                           <div className="text-slate-900 dark:text-white font-bold">
-                            {sub.studentName}
+                            {sub.studentName || "Student"}
                           </div>
                           <div className="text-[11px] text-slate-400 font-mono">
-                            {sub.studentEmail}
+                            {sub.studentEmail || sub.studentPhone || sub.studentId}
                           </div>
                         </td>
                         <td className="p-4">
                           <div className="text-slate-800 dark:text-slate-200 font-semibold">
-                            {sub.lessonTitle}
+                            {sub.lessonTitle || sub.title}
                           </div>
                           <div className="text-[11px] text-slate-400">
                             {sub.courseTitle}
                           </div>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            {sub.mentorName || "—"}
+                          </span>
                         </td>
                         <td className="p-4">
                           {sub.submissionUrl ? (
@@ -246,6 +335,10 @@ export default function SubmissionsPage() {
                               <ExternalLink className="w-3.5 h-3.5" />
                               <span>View Deliverable</span>
                             </a>
+                          ) : sub.codeSnippet ? (
+                            <span className="text-[11px] font-mono text-slate-400">
+                              Code submitted
+                            </span>
                           ) : (
                             <span className="text-[11px] text-slate-400 italic">No URL</span>
                           )}
@@ -292,15 +385,24 @@ export default function SubmissionsPage() {
               </h2>
               <button
                 onClick={() => setSelectedSub(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
+            {gradingError && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 shrink-0" />
+                <span>{gradingError}</span>
+              </div>
+            )}
+
             <div className="space-y-3 text-xs">
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#070A11] border border-slate-100 dark:border-slate-800/80 space-y-1">
-                <p className="font-bold text-slate-800 dark:text-slate-200">{selectedSub.lessonTitle}</p>
+                <p className="font-bold text-slate-800 dark:text-slate-200">
+                  {selectedSub.lessonTitle || selectedSub.title}
+                </p>
                 <p className="text-slate-400">{selectedSub.courseTitle}</p>
                 {selectedSub.submissionUrl && (
                   <a
@@ -313,20 +415,40 @@ export default function SubmissionsPage() {
                     <span>Open Code Repository</span>
                   </a>
                 )}
+                {selectedSub.submissionText && (
+                  <p className="text-slate-600 dark:text-slate-300 pt-1">
+                    {selectedSub.submissionText}
+                  </p>
+                )}
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Evaluation Verdict
-                </label>
-                <select
-                  value={reviewStatus}
-                  onChange={(e: any) => setReviewStatus(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/40"
-                >
-                  <option value="APPROVED">APPROVED (Pass Milestone)</option>
-                  <option value="CHANGES_REQUESTED">CHANGES_REQUESTED (Resubmit)</option>
-                </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Evaluation Verdict
+                  </label>
+                  <select
+                    value={reviewStatus}
+                    onChange={(e: any) => setReviewStatus(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                  >
+                    <option value="APPROVED">APPROVED (Pass Milestone)</option>
+                    <option value="CHANGES_REQUESTED">CHANGES_REQUESTED (Resubmit)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Score / 100
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={reviewScore}
+                    onChange={(e) => setReviewScore(Number(e.target.value))}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#070A11] text-slate-900 dark:text-slate-100 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                  />
+                </div>
               </div>
 
               <div>
@@ -353,10 +475,11 @@ export default function SubmissionsPage() {
               </button>
               <button
                 type="button"
+                disabled={isGrading}
                 onClick={handleSaveReview}
-                className="px-4 py-2 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-xl transition-all shadow-xs cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 disabled:opacity-50 rounded-xl transition-all shadow-xs cursor-pointer"
               >
-                Save Review
+                {isGrading ? "Saving..." : "Save Evaluation"}
               </button>
             </div>
           </div>
