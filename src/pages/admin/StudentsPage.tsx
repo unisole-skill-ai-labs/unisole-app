@@ -38,6 +38,9 @@ export default function StudentsPage() {
   const isAdmin =
     userRoles.includes("SUPER_ADMIN") || userRoles.includes("ADMIN");
 
+  const isMentor =
+    userRoles.includes("MENTOR") && !isAdmin;
+
   const isProgramManager =
     userRoles.includes("PROGRAM_MANAGER") && !isAdmin;
 
@@ -167,13 +170,21 @@ export default function StudentsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
             <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            <span>Enrolled Students & Mentor Allocations</span>
+            <span>
+              {isMentor
+                ? "My Assigned Mentees"
+                : isProgramManager
+                ? "Mentorship Cohort Roster"
+                : "Enrolled Students & Mentor Allocations"}
+            </span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {isAdmin
               ? "Platform Admin view: Manage learner enrollments and assign dedicated mentors to mentees."
+              : isMentor
+              ? "Mentor view: Dedicated learners assigned to your mentorship cohort for 1-on-1 guidance."
               : isProgramManager
-              ? "Program Manager view: Tracking enrolled students. Note: Mentor assignments are managed by Platform Admins."
+              ? "Program Manager view: Tracking all enrolled students who have active mentor assignments."
               : "Directory of enrolled students and assigned academic mentors."}
           </p>
         </div>
@@ -183,12 +194,18 @@ export default function StudentsPage() {
           {!isAdmin && (
             <span className="text-[11px] font-medium px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1.5">
               <Info className="w-3.5 h-3.5" />
-              <span>Admin-Only Mentor Assignments</span>
+              <span>Admin-Managed Allocations</span>
             </span>
           )}
           <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center gap-1.5 shadow-2xs">
             <GraduationCap className="w-4 h-4" />
-            <span>Enrolled Students: {totalEnrolledCount}</span>
+            <span>
+              {isMentor
+                ? `My Mentees: ${students.length}`
+                : isProgramManager
+                ? `Mentored Cohort: ${students.length}`
+                : `Enrolled Students: ${totalEnrolledCount}`}
+            </span>
           </span>
         </div>
       </div>
@@ -253,9 +270,11 @@ export default function StudentsPage() {
               ) : filteredStudents.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-12 text-center text-slate-400">
-                    {isProgramManager
-                      ? "No enrolled students found. Only students with active course enrollments are visible."
-                      : "No students matching your filter criteria."}
+                    {isMentor
+                      ? "You currently have no assigned mentees. Your administrator will allocate students to your mentorship cohort."
+                      : isProgramManager
+                      ? "No students with active mentor assignments found."
+                      : "No enrolled students matching your criteria."}
                   </td>
                 </tr>
               ) : (
