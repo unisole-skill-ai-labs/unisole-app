@@ -701,7 +701,7 @@ export default function EditCoursePage() {
       await attachLesson({
         moduleId,
         lessonId: created.id,
-        position: 99,
+        position: 0,
       }).unwrap();
 
       setNewLessonTitle("");
