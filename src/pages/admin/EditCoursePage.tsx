@@ -62,10 +62,11 @@ export default function EditCoursePage() {
   // Queries
   const { data: course, isLoading: isCourseLoading } = useGetAdminCourseByIdQuery(courseId, {
     skip: !courseId,
+    refetchOnMountOrArgChange: true,
   });
   const { data: courseModules = [], refetch: refetchModules } = useGetAdminCourseModulesQuery(
     courseId,
-    { skip: !courseId }
+    { skip: !courseId, refetchOnMountOrArgChange: true }
   );
 
   // Mutations
@@ -1796,7 +1797,9 @@ function ChapterSection({
   setNewLessonTitle,
   onAddLesson,
 }: ChapterSectionProps) {
-  const { data: moduleLessons = [] } = useGetAdminModuleLessonsQuery(moduleId);
+  const { data: moduleLessons = [] } = useGetAdminModuleLessonsQuery(moduleId, {
+    refetchOnMountOrArgChange: true,
+  });
   const [collapsed, setCollapsed] = useState(false);
 
   const getLessonBadge = (les: any) => {
