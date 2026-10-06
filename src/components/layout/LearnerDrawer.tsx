@@ -131,6 +131,13 @@ export default function LearnerDrawer({ isOpen, onClose }: LearnerDrawerProps) {
       isAction: false,
     },
     {
+      id: "calendar",
+      name: "Calendar",
+      icon: Calendar,
+      to: "/calendar",
+      isAction: false,
+    },
+    {
       id: "courses",
       name: "Courses",
       icon: Tv,

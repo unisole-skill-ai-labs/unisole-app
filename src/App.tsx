@@ -16,6 +16,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ProfilePage from "./pages/ProfilePage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import CalendarPage from "./pages/CalendarPage";
 
 // Admin & Mentor Portal
 import AdminGuard from "./components/guards/AdminGuard";
@@ -61,6 +62,7 @@ export default function App() {
         <Route path="courses" element={<AdminCoursesPage />} />
         <Route path="courses/:courseId" element={<EditCoursePage />} />
         <Route path="submissions" element={<SubmissionsPage />} />
+        <Route path="calendar" element={<CalendarPage />} />
         <Route path="files" element={<FilesPage />} />
         <Route path="students" element={<StudentsPage />} />
       </Route>
@@ -120,7 +122,23 @@ export default function App() {
           }
         />
         <Route
+          path="calendar"
+          element={
+            <ProtectedRoute>
+              <CalendarPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="learn/:pathwayId"
+          element={
+            <ProtectedRoute>
+              <LmsPlayerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="player/:pathwayId"
           element={
             <ProtectedRoute>
               <LmsPlayerPage />

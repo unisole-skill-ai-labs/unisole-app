@@ -77,6 +77,7 @@ export const apiSlice = createApi({
     "Activities",
     "Notes",
     "Cohort",
+    "CalendarEvents",
   ],
   endpoints: (builder) => ({
     // ─── Auth Endpoints ──────────────────────────────────────────────────────────
@@ -531,6 +532,38 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Submissions", "Cohort", "Activities"],
     }),
+
+    // Calendar & Scheduling
+    getCalendarEvents: builder.query({
+      query: (params) => ({
+        url: "/api/lms/calendar/events",
+        params,
+      }),
+      providesTags: ["CalendarEvents"],
+    }),
+    createCalendarEvent: builder.mutation({
+      query: (body) => ({
+        url: "/api/lms/calendar/events",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["CalendarEvents"],
+    }),
+    updateCalendarEvent: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `/api/lms/calendar/events/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["CalendarEvents"],
+    }),
+    deleteCalendarEvent: builder.mutation({
+      query: (id) => ({
+        url: `/api/lms/calendar/events/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["CalendarEvents"],
+    }),
   }),
 });
 
@@ -601,4 +634,10 @@ export const {
   useCreateCourseAssignmentMutation,
   useSubmitAssessmentTaskMutation,
   useGradeSubmissionMutation,
+
+  // Calendar hooks
+  useGetCalendarEventsQuery,
+  useCreateCalendarEventMutation,
+  useUpdateCalendarEventMutation,
+  useDeleteCalendarEventMutation,
 } = apiSlice;

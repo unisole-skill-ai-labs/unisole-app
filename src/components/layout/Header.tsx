@@ -47,6 +47,7 @@ export default function Header() {
   const navLinks = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
     { name: "My Learning", path: "/enrolled", icon: BookOpen, authRequired: true },
+    { name: "Calendar", path: "/calendar", icon: Newspaper, authRequired: true },
   ];
 
   // Close dropdown on click outside

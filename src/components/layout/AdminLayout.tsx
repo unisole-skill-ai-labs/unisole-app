@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   BookOpen,
   ClipboardCheck,
+  Calendar,
   FolderArchive,
   Users,
   ExternalLink,
@@ -59,6 +60,7 @@ export default function AdminLayout() {
     ...(isMentor
       ? [{ name: "Mentor View", path: "/admin/submissions", icon: ClipboardCheck, badge: "Active" }]
       : []),
+    { name: "Calendar", path: "/admin/calendar", icon: Calendar },
     { name: "Students", path: "/admin/students", icon: Users },
   ];
 
