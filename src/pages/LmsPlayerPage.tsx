@@ -39,6 +39,7 @@ import {
   FolderOpen,
   FileArchive,
   Download,
+  Layers,
 } from "lucide-react";
 import {
   useGetPathwayContentQuery,
@@ -234,6 +235,7 @@ export default function LmsPlayerPage() {
               duration: l.durationMinutes ? `${l.durationMinutes} Mins` : `${lIdx * 3 + 12} Mins`,
               type: resolvedType,
               category: resolvedCategory,
+              folderId: l.folderId || parsedContent?.folderId || undefined,
               videoUrl: l.videoUrl || parsedContent?.videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1",
               description: l.description || parsedContent?.contentMarkdown,
               questions: parsedQuestions || fallbackItem?.questions,
@@ -905,24 +907,28 @@ export default function LmsPlayerPage() {
     const folderLessons =
       selectedModule?.items.filter((i) => i.category === "FOLDER" || i.type === "folder") || [];
     const videoLessons =
-      selectedModule?.items.filter((i) => (i.category === "LECTURE" || i.type === "video") && i.category !== "FOLDER") || [];
+      selectedModule?.items.filter(
+        (i) => (i.category === "LECTURE" || i.type === "video") && i.category !== "FOLDER" && !i.folderId
+      ) || [];
     const practiceLessons =
       selectedModule?.items.filter(
         (i: any) =>
           (i.category === "PRACTICE" ||
-          (i.type === "quiz" && i.category !== "TEST" && i.category !== "LECTURE") ||
-          (i.type === "assignment" && i.category === "PRACTICE")) &&
-          i.category !== "FOLDER"
+            (i.type === "quiz" && i.category !== "TEST" && i.category !== "LECTURE") ||
+            (i.type === "assignment" && i.category === "PRACTICE")) &&
+          i.category !== "FOLDER" &&
+          !i.folderId
       ) || [];
     const testLessons =
       selectedModule?.items.filter(
         (i: any) =>
           (i.category === "TEST" ||
-          i.type === "coding_test" ||
-          i.type === "subjective_test" ||
-          i.type === "video_test" ||
-          (i.type === "assignment" && i.category === "TEST")) &&
-          i.category !== "FOLDER"
+            i.type === "coding_test" ||
+            i.type === "subjective_test" ||
+            i.type === "video_test" ||
+            (i.type === "assignment" && i.category === "TEST")) &&
+          i.category !== "FOLDER" &&
+          !i.folderId
       ) || [];
 
     return (
@@ -1308,6 +1314,61 @@ export default function LmsPlayerPage() {
                   </div>
                 </div>
               )}
+
+              {/* Nested Lessons inside this Folder */}
+              {(() => {
+                const childLessons = selectedModule?.items.filter((i: any) => i.folderId === selectedLesson.id) || [];
+                if (childLessons.length === 0) return null;
+                return (
+                  <div className="space-y-3 pt-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-2">
+                      <Layers className="w-4 h-4" />
+                      <span>Lessons & Assessments in this Folder ({childLessons.length})</span>
+                    </h3>
+                    <div className="space-y-2">
+                      {childLessons.map((cItem: any) => {
+                        const isDone = completedLessonIds.includes(cItem.id);
+                        return (
+                          <div
+                            key={cItem.id}
+                            onClick={() => {
+                              setSelectedLesson(cItem);
+                              setCurrentView("player");
+                            }}
+                            className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#070A11] hover:border-teal-400 hover:shadow-xs transition-all flex items-center justify-between cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 pr-2">
+                              <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                                {cItem.type === "video" ? (
+                                  <PlayCircle className="w-4 h-4 stroke-[2.2]" />
+                                ) : cItem.type === "quiz" ? (
+                                  <FileQuestion className="w-4 h-4 stroke-[2.2]" />
+                                ) : cItem.type === "coding_test" ? (
+                                  <Code2 className="w-4 h-4 stroke-[2.2]" />
+                                ) : (
+                                  <FileText className="w-4 h-4 stroke-[2.2]" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-teal-600 dark:group-hover:text-teal-400 truncate">
+                                  {cItem.title}
+                                </h4>
+                                <span className="text-[10px] text-slate-400">
+                                  {cItem.duration || "15 Mins"} · {cItem.category || "Lesson"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {isDone && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+                              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-teal-500 group-hover:translate-x-0.5 transition-transform" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}

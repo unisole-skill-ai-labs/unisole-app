@@ -18,7 +18,9 @@ export interface LessonItem {
   instructions?: string;
   config?: any;
   maxScore?: number;
+  folderId?: string;
   attachments?: Array<{ id: string; name: string; url: string; size?: string }>;
+  items?: LessonItem[];
 }
 
 export interface ModuleSection {

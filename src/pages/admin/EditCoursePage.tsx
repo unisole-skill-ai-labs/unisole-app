@@ -44,6 +44,9 @@ import {
   Download,
   Layers,
   Sparkles,
+  GripVertical,
+  MoveUpRight,
+  CornerDownRight,
 } from "lucide-react";
 import {
   useGetAdminCourseByIdQuery,
@@ -529,6 +532,47 @@ export default function EditCoursePage() {
     }
   };
 
+  const handleReorderChapters = async (newModuleIds: string[]) => {
+    try {
+      await reorderModulesApi({ courseId, moduleIds: newModuleIds }).unwrap();
+      refetchModules();
+    } catch (err) {
+      console.error("Failed to reorder chapters:", err);
+    }
+  };
+
+  const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
+  const [dragOverChapterIdx, setDragOverChapterIdx] = useState<number | null>(null);
+
+  const handleChapterDragStart = (e: React.DragEvent, idx: number) => {
+    setDraggedChapterIdx(idx);
+    e.dataTransfer.setData("text/plain", JSON.stringify({ type: "CHAPTER", index: idx }));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleChapterDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (draggedChapterIdx === null || draggedChapterIdx === idx) return;
+    setDragOverChapterIdx(idx);
+  };
+
+  const handleChapterDrop = async (e: React.DragEvent, dropIdx: number) => {
+    e.preventDefault();
+    setDragOverChapterIdx(null);
+    if (draggedChapterIdx === null || draggedChapterIdx === dropIdx) {
+      setDraggedChapterIdx(null);
+      return;
+    }
+
+    const newModules = [...courseModules];
+    const [movedChapter] = newModules.splice(draggedChapterIdx, 1);
+    newModules.splice(dropIdx, 0, movedChapter);
+    setDraggedChapterIdx(null);
+
+    const newModuleIds = newModules.map((m: any) => m.moduleId);
+    await handleReorderChapters(newModuleIds);
+  };
+
   // Delete Chapter
   const handleDeleteChapter = async (moduleId: string) => {
     if (!window.confirm("Are you sure you want to remove this chapter and its lessons from this course?")) return;
@@ -553,7 +597,8 @@ export default function EditCoursePage() {
       | "TEST_PROJECT"
       | "FOLDER"
       | "CUSTOM",
-    customTitle?: string
+    customTitle?: string,
+    targetFolderId?: string
   ) => {
     try {
       const slug = `${course?.slug || "course"}-les-${Date.now()}`;
@@ -717,6 +762,10 @@ export default function EditCoursePage() {
             contentMarkdown: "Write lesson reading notes here...",
           };
           break;
+      }
+
+      if (targetFolderId) {
+        payloadContent.folderId = targetFolderId;
       }
 
       const created = await createLesson({
@@ -989,11 +1038,15 @@ export default function EditCoursePage() {
                   isLast={idx === courseModules.length - 1}
                   allModules={courseModules}
                   activeLessonId={activeLessonId}
+                  isDragging={draggedChapterIdx === idx}
+                  isDragOver={dragOverChapterIdx === idx}
+                  onDragStart={(e) => handleChapterDragStart(e, idx)}
+                  onDragOver={(e) => handleChapterDragOver(e, idx)}
+                  onDrop={(e) => handleChapterDrop(e, idx)}
                   onSelectLesson={(lessonId) => setActiveLessonId(lessonId)}
-                  onMoveChapter={(direction) => handleMoveChapter(idx, direction)}
                   onDeleteChapter={() => handleDeleteChapter(cMod.moduleId)}
-                  onAddLessonWithType={(typeKey, customTitle) =>
-                    handleAddLessonWithType(cMod.moduleId, typeKey, customTitle)
+                  onAddLessonWithType={(typeKey, customTitle, targetFolderId) =>
+                    handleAddLessonWithType(cMod.moduleId, typeKey, customTitle, targetFolderId)
                   }
                 />
               ))
@@ -2055,7 +2108,7 @@ export default function EditCoursePage() {
   );
 }
 
-// ──────────────── SUBCOMPONENT: Chapter Section with Lessons ────────────────
+// ──────────────── SUBCOMPONENT: Chapter Section with Lessons & Nested Folders ────────────────
 interface ChapterSectionProps {
   moduleId: string;
   moduleTitle?: string;
@@ -2065,7 +2118,6 @@ interface ChapterSectionProps {
   allModules: any[];
   activeLessonId: string | null;
   onSelectLesson: (id: string) => void;
-  onMoveChapter: (direction: "UP" | "DOWN") => void;
   onDeleteChapter: () => void;
   onAddLessonWithType: (
     typeKey:
@@ -2078,35 +2130,53 @@ interface ChapterSectionProps {
       | "TEST_PROJECT"
       | "FOLDER"
       | "CUSTOM",
-    customTitle?: string
+    customTitle?: string,
+    targetFolderId?: string
   ) => void;
+  isDragging?: boolean;
+  isDragOver?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
 }
 
 function ChapterSection({
   moduleId,
   moduleTitle,
   position,
-  isFirst,
-  isLast,
   allModules,
   activeLessonId,
   onSelectLesson,
-  onMoveChapter,
   onDeleteChapter,
   onAddLessonWithType,
+  isDragging = false,
+  isDragOver = false,
+  onDragStart,
+  onDragOver,
+  onDrop,
 }: ChapterSectionProps) {
-  const { data: moduleLessons = [] } = useGetAdminModuleLessonsQuery(moduleId, {
+  const { data: moduleLessons = [], refetch: refetchLessons } = useGetAdminModuleLessonsQuery(moduleId, {
     refetchOnMountOrArgChange: true,
   });
   const [reorderLessonsApi] = useReorderAdminModuleLessonsMutation();
   const [moveLessonApi] = useMoveAdminModuleLessonMutation();
   const [detachLessonApi] = useDetachAdminModuleLessonMutation();
+  const [updateLessonApi] = useUpdateAdminLessonMutation();
 
   const [collapsed, setCollapsed] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
+  const [activeFolderAddMenuId, setActiveFolderAddMenuId] = useState<string | null>(null);
+  const [showMoreTypes, setShowMoreTypes] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customLessonTitle, setCustomLessonTitle] = useState("");
+  const [customFolderTargetId, setCustomFolderTargetId] = useState<string | undefined>(undefined);
   const [movingLessonId, setMovingLessonId] = useState<string | null>(null);
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
+
+  // Drag state for lessons & folders
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
 
   const addMenuRef = useRef<HTMLDivElement>(null);
 
@@ -2115,33 +2185,234 @@ function ChapterSection({
     const handleClickOutside = (e: MouseEvent) => {
       if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
         setShowAddMenu(false);
+        setActiveFolderAddMenuId(null);
       }
     };
-    if (showAddMenu) {
+    if (showAddMenu || activeFolderAddMenuId) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showAddMenu]);
+  }, [showAddMenu, activeFolderAddMenuId]);
 
-  // Lesson reordering within chapter
-  const handleMoveLesson = async (e: React.MouseEvent, index: number, direction: "UP" | "DOWN") => {
+  // Parse all lesson items and build folder hierarchy
+  const { parsedLessons, foldersMap, rootLessons, folderChildrenMap } = useMemo(() => {
+    const parsed = moduleLessons.map((les: any) => {
+      let parsedContent: any = {};
+      try {
+        if (les.content && typeof les.content === "string" && les.content.startsWith("{")) {
+          parsedContent = JSON.parse(les.content);
+        }
+      } catch {}
+
+      const text = `${les.title || ""} ${les.slug || ""} ${les.lessonId || ""}`.toLowerCase();
+      const isFolder =
+        les.type === "FOLDER" ||
+        les.category === "FOLDER" ||
+        parsedContent?.type === "FOLDER" ||
+        parsedContent?.curriculumMode === "FOLDER" ||
+        text.includes("folder") ||
+        text.includes("📁");
+
+      const folderId = parsedContent?.folderId || les.folderId || null;
+
+      return {
+        ...les,
+        parsedContent,
+        isFolder,
+        folderId,
+      };
+    });
+
+    const fMap: Record<string, any> = {};
+    const fChildren: Record<string, any[]> = {};
+    const roots: any[] = [];
+
+    // Register folders first
+    parsed.forEach((item) => {
+      if (item.isFolder) {
+        fMap[item.lessonId] = item;
+        fChildren[item.lessonId] = [];
+      }
+    });
+
+    // Partition items into root vs nested inside folder
+    parsed.forEach((item) => {
+      if (item.folderId && fMap[item.folderId]) {
+        fChildren[item.folderId].push(item);
+      } else {
+        roots.push(item);
+      }
+    });
+
+    return {
+      parsedLessons: parsed,
+      foldersMap: fMap,
+      rootLessons: roots,
+      folderChildrenMap: fChildren,
+    };
+  }, [moduleLessons]);
+
+  const toggleFolder = (folderId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (direction === "UP" && index === 0) return;
-    if (direction === "DOWN" && index === moduleLessons.length - 1) return;
+    setOpenFolders((prev) => ({
+      ...prev,
+      [folderId]: prev[folderId] === undefined ? false : !prev[folderId],
+    }));
+  };
 
-    const targetIndex = direction === "UP" ? index - 1 : index + 1;
-    const newOrder = [...moduleLessons];
-    const temp = newOrder[index];
-    newOrder[index] = newOrder[targetIndex];
-    newOrder[targetIndex] = temp;
+  const isFolderOpen = (folderId: string) => {
+    return openFolders[folderId] !== false; // default open
+  };
 
-    const lessonIds = newOrder.map((l: any) => l.lessonId);
+  // Drag & Drop Handlers for Lessons & Folders
+  const handleItemDragStart = (e: React.DragEvent, lessonId: string, sourceFolderId?: string | null) => {
+    e.stopPropagation();
+    setDraggedItemId(lessonId);
+    e.dataTransfer.setData(
+      "text/plain",
+      JSON.stringify({
+        type: "LESSON_ITEM",
+        lessonId,
+        sourceModuleId: moduleId,
+        sourceFolderId: sourceFolderId || null,
+      })
+    );
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleItemDragOver = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedItemId === targetId) return;
+    setDragOverItemId(targetId);
+  };
+
+  const handleFolderDropTargetOver = (e: React.DragEvent, targetFolderId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedItemId === targetFolderId) return;
+    setDragOverFolderId(targetFolderId);
+  };
+
+  // Drop onto another item (reordering)
+  const handleItemDrop = async (
+    e: React.DragEvent,
+    targetLessonId: string,
+    targetFolderId?: string | null
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverItemId(null);
+    setDragOverFolderId(null);
+
+    const rawData = e.dataTransfer.getData("text/plain");
+    let dragData: any = null;
     try {
-      await reorderLessonsApi({ moduleId, lessonIds }).unwrap();
+      dragData = JSON.parse(rawData);
+    } catch {}
+
+    const sourceLessonId = dragData?.lessonId || draggedItemId;
+    setDraggedItemId(null);
+
+    if (!sourceLessonId || sourceLessonId === targetLessonId) return;
+
+    // Check if moving between different modules
+    if (dragData?.sourceModuleId && dragData.sourceModuleId !== moduleId) {
+      await moveLessonApi({
+        sourceModuleId: dragData.sourceModuleId,
+        targetModuleId: moduleId,
+        lessonId: sourceLessonId,
+      }).unwrap();
+      refetchLessons();
+      return;
+    }
+
+    // Check if folder assignment needs to change
+    const draggedItem = parsedLessons.find((l) => l.lessonId === sourceLessonId);
+    if (draggedItem && (draggedItem.folderId || null) !== (targetFolderId || null)) {
+      const updatedContent = {
+        ...(draggedItem.parsedContent || {}),
+        folderId: targetFolderId || null,
+      };
+      await updateLessonApi({
+        id: sourceLessonId,
+        content: JSON.stringify(updatedContent),
+      }).unwrap();
+    }
+
+    // Reorder array
+    const currentOrder = moduleLessons.map((l: any) => l.lessonId);
+    const sourceIdx = currentOrder.indexOf(sourceLessonId);
+    const targetIdx = currentOrder.indexOf(targetLessonId);
+
+    if (sourceIdx !== -1 && targetIdx !== -1) {
+      const newOrder = [...currentOrder];
+      newOrder.splice(sourceIdx, 1);
+      newOrder.splice(targetIdx, 0, sourceLessonId);
+
+      try {
+        await reorderLessonsApi({ moduleId, lessonIds: newOrder }).unwrap();
+        refetchLessons();
+      } catch (err) {
+        console.error("Failed to reorder lessons:", err);
+      }
+    }
+  };
+
+  // Drop DIRECTLY INTO a folder card or its dropzone
+  const handleDropIntoFolder = async (e: React.DragEvent, targetFolderId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverFolderId(null);
+    setDragOverItemId(null);
+
+    const rawData = e.dataTransfer.getData("text/plain");
+    let dragData: any = null;
+    try {
+      dragData = JSON.parse(rawData);
+    } catch {}
+
+    const sourceLessonId = dragData?.lessonId || draggedItemId;
+    setDraggedItemId(null);
+
+    if (!sourceLessonId || sourceLessonId === targetFolderId) return;
+
+    const draggedItem = parsedLessons.find((l) => l.lessonId === sourceLessonId);
+    if (!draggedItem || draggedItem.isFolder) return; // Prevent nesting folder inside another folder
+
+    const updatedContent = {
+      ...(draggedItem.parsedContent || {}),
+      folderId: targetFolderId,
+    };
+
+    try {
+      await updateLessonApi({
+        id: sourceLessonId,
+        content: JSON.stringify(updatedContent),
+      }).unwrap();
+      refetchLessons();
     } catch (err) {
-      console.error("Failed to reorder lessons:", err);
+      console.error("Failed to move lesson into folder:", err);
+    }
+  };
+
+  // Extract a nested item out of a folder back to root
+  const handleExtractFromFolder = async (e: React.MouseEvent, item: any) => {
+    e.stopPropagation();
+    const updatedContent = {
+      ...(item.parsedContent || {}),
+      folderId: null,
+    };
+    try {
+      await updateLessonApi({
+        id: item.lessonId,
+        content: JSON.stringify(updatedContent),
+      }).unwrap();
+      refetchLessons();
+    } catch (err) {
+      console.error("Failed to extract lesson from folder:", err);
     }
   };
 
@@ -2155,6 +2426,7 @@ function ChapterSection({
         lessonId,
       }).unwrap();
       setMovingLessonId(null);
+      refetchLessons();
     } catch (err) {
       console.error("Failed to move lesson:", err);
     }
@@ -2163,15 +2435,23 @@ function ChapterSection({
   // Delete lesson from chapter
   const handleDeleteLesson = async (e: React.MouseEvent, lessonId: string) => {
     e.stopPropagation();
-    if (!window.confirm("Are you sure you want to remove this lesson from this chapter?")) return;
+    if (!window.confirm("Are you sure you want to remove this item from this chapter?")) return;
     try {
       await detachLessonApi({ moduleId, lessonId }).unwrap();
+      refetchLessons();
     } catch (err) {
       console.error("Failed to delete lesson:", err);
     }
   };
 
   const getLessonBadge = (les: any) => {
+    if (les.isFolder) {
+      return {
+        label: "Folder",
+        bg: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20",
+        isFolder: true,
+      };
+    }
     if (les.videoUrl) {
       return {
         label: "Video",
@@ -2180,13 +2460,6 @@ function ChapterSection({
       };
     }
     const text = `${les.title || ""} ${les.slug || ""} ${les.lessonId || ""}`.toLowerCase();
-    if (text.includes("folder") || text.includes("📁") || les.type === "FOLDER" || les.category === "FOLDER") {
-      return {
-        label: "Folder",
-        bg: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20",
-        isFolder: true,
-      };
-    }
     if (text.includes("quiz") || text.includes("mcq")) {
       return {
         label: "MCQ",
@@ -2231,61 +2504,246 @@ function ChapterSection({
 
   const otherModules = allModules.filter((m) => m.moduleId !== moduleId);
 
-  return (
-    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] shadow-2xs">
-      {/* Chapter Header */}
-      <div className="p-3 flex items-center justify-between bg-slate-50/70 dark:bg-[#070A11]/60 border-b border-slate-100 dark:border-slate-800/60 gap-2">
+  // Render a sleek, compact modern + Add tray (No wordy clutter, gorgeous icons)
+  const renderAddMenu = (targetFolderId?: string) => (
+    <div
+      ref={addMenuRef}
+      className="p-3 bg-white dark:bg-[#070A11] border-b border-slate-200/90 dark:border-slate-800 rounded-xl my-1 shadow-sm space-y-2.5 animate-fade-in"
+    >
+      <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800/80">
+        <span className="text-[10px] font-black tracking-wider uppercase text-sky-600 dark:text-sky-400">
+          {targetFolderId ? "Add Inside Folder" : "Select Content Type"}
+        </span>
         <button
           type="button"
-          onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center gap-2 text-left truncate flex-1 min-w-0 cursor-pointer"
+          onClick={() => {
+            setShowAddMenu(false);
+            setActiveFolderAddMenuId(null);
+          }}
+          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
         >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
-          )}
-          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-            Chapter {position}{moduleTitle ? ` — ${moduleTitle}` : ""}
-          </span>
+          <X className="w-3.5 h-3.5" />
         </button>
+      </div>
 
-        {/* Chapter Actions: Shift, Add, Delete */}
-        <div className="flex items-center gap-1 shrink-0">
+      {/* LECTURE & PRACTICE */}
+      <div className="space-y-1">
+        <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Lesson & Practice
+        </span>
+        <div className="grid grid-cols-3 gap-1.5">
           <button
             type="button"
-            disabled={isFirst}
-            onClick={() => onMoveChapter("UP")}
-            title="Shift Chapter Up"
-            className={`p-1 rounded-lg transition-colors ${
-              isFirst
-                ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 cursor-pointer"
-            }`}
+            onClick={() => {
+              setShowAddMenu(false);
+              setActiveFolderAddMenuId(null);
+              onAddLessonWithType("LECTURE_VIDEO", undefined, targetFolderId);
+            }}
+            className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 dark:bg-[#0B1120] border border-slate-200/70 dark:border-slate-800 hover:border-sky-400 dark:hover:border-sky-500/50 hover:bg-sky-50/50 dark:hover:bg-sky-500/10 text-center transition-all group cursor-pointer"
           >
-            <ArrowUp className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            disabled={isLast}
-            onClick={() => onMoveChapter("DOWN")}
-            title="Shift Chapter Down"
-            className={`p-1 rounded-lg transition-colors ${
-              isLast
-                ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 cursor-pointer"
-            }`}
-          >
-            <ArrowDown className="w-3.5 h-3.5" />
+            <div className="w-7 h-7 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+              <PlayCircle className="w-4 h-4 stroke-[2.3]" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400 truncate w-full">
+              Video Lecture
+            </span>
           </button>
 
           <button
             type="button"
             onClick={() => {
+              setShowAddMenu(false);
+              setActiveFolderAddMenuId(null);
+              onAddLessonWithType("PRACTICE_MCQ", undefined, targetFolderId);
+            }}
+            className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 dark:bg-[#0B1120] border border-slate-200/70 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500/50 hover:bg-amber-50/50 dark:hover:bg-amber-500/10 text-center transition-all group cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+              <HelpCircle className="w-4 h-4 stroke-[2.3]" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 truncate w-full">
+              MCQ Quiz
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddMenu(false);
+              setActiveFolderAddMenuId(null);
+              onAddLessonWithType("PRACTICE_PROJECT", undefined, targetFolderId);
+            }}
+            className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 dark:bg-[#0B1120] border border-slate-200/70 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500/50 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/10 text-center transition-all group cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+              <Code className="w-4 h-4 stroke-[2.3]" />
+            </div>
+            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 truncate w-full">
+              Practice Lab
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* EVALUATED ASSESSMENTS & TESTS */}
+      <div className="space-y-1">
+        <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Evaluated Tests
+        </span>
+        <div className="grid grid-cols-4 gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddMenu(false);
+              setActiveFolderAddMenuId(null);
+              onAddLessonWithType("TEST_CODING", undefined, targetFolderId);
+            }}
+            className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 dark:bg-[#0B1120] border border-slate-200/70 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500/50 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/10 text-center transition-all group cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+              <Code2 className="w-4 h-4 stroke-[2.3]" />
+            </div>
+            <span className="text-[10px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate w-full">
+              Coding
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddMenu(false);
+              setActiveFolderAddMenuId(null);
+              onAddLessonWithType("TEST_VIVA", undefined, targetFolderId);
+            }}
+            className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 dark:bg-[#0B1120] border border-slate-200/70 dark:border-slate-800 hover:border-purple-400 dark:hover:border-purple-500/50 hover:bg-purple-50/50 dark:hover:bg-purple-500/10 text-center transition-all group cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+              <Video className="w-4 h-4 stroke-[2.3]" />
+            </div>
+            <span className="text-[10px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 truncate w-full">
+              Video Viva
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddMenu(false);
+              setActiveFolderAddMenuId(null);
+              onAddLessonWithType("TEST_SUBJECTIVE", undefined, targetFolderId);
+            }}
+            className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 dark:bg-[#0B1120] border border-slate-200/70 dark:border-slate-800 hover:border-rose-400 dark:hover:border-rose-500/50 hover:bg-rose-50/50 dark:hover:bg-rose-500/10 text-center transition-all group cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+              <BookOpen className="w-4 h-4 stroke-[2.3]" />
+            </div>
+            <span className="text-[10px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-rose-600 dark:group-hover:text-rose-400 truncate w-full">
+              Subjective
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddMenu(false);
+              setActiveFolderAddMenuId(null);
+              onAddLessonWithType("TEST_PROJECT", undefined, targetFolderId);
+            }}
+            className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 dark:bg-[#0B1120] border border-slate-200/70 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500/50 hover:bg-amber-50/50 dark:hover:bg-amber-500/10 text-center transition-all group cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+              <Award className="w-4 h-4 stroke-[2.3]" />
+            </div>
+            <span className="text-[10px] font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-600 dark:group-hover:text-amber-400 truncate w-full">
+              Capstone
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* FOLDER & CUSTOM OPTIONS */}
+      <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-1.5">
+        {!targetFolderId && (
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddMenu(false);
+              onAddLessonWithType("FOLDER");
+            }}
+            className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/30 border border-teal-200/80 dark:border-teal-500/30 hover:bg-teal-100 dark:hover:bg-teal-900/40 text-teal-700 dark:text-teal-300 text-xs font-bold transition-all cursor-pointer"
+          >
+            <FolderPlus className="w-3.5 h-3.5 stroke-[2.3]" />
+            <span>Folder / Container</span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowAddMenu(false);
+            setActiveFolderAddMenuId(null);
+            setCustomFolderTargetId(targetFolderId);
+            setShowCustomInput(true);
+          }}
+          className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Custom Title</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      className={`rounded-2xl border transition-all ${
+        isDragOver
+          ? "border-sky-500 bg-sky-500/5 shadow-md"
+          : isDragging
+          ? "opacity-50 border-slate-300 dark:border-slate-700"
+          : "border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] shadow-2xs"
+      }`}
+    >
+      {/* Chapter Header (Drag handle, Title, + Add, Delete) */}
+      <div className="p-3 flex items-center justify-between bg-slate-50/70 dark:bg-[#070A11]/60 border-b border-slate-100 dark:border-slate-800/60 gap-2">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <div
+            title="Drag to reorder chapter"
+            className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5"
+          >
+            <GripVertical className="w-4 h-4 stroke-[2.2]" />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setCollapsed(!collapsed)}
+            className="flex items-center gap-1.5 text-left truncate flex-1 min-w-0 cursor-pointer"
+          >
+            {collapsed ? (
+              <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+            )}
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+              Chapter {position}{moduleTitle ? ` — ${moduleTitle}` : ""}
+            </span>
+          </button>
+        </div>
+
+        {/* Chapter Actions: + Add & Delete (Zero Arrow Buttons) */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
               if (collapsed) setCollapsed(false);
+              setActiveFolderAddMenuId(null);
               setShowAddMenu(!showAddMenu);
             }}
-            title="Add Lesson or Assessment"
+            title="Add content to chapter"
             className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-2xs ${
               showAddMenu
                 ? "bg-sky-500 text-white border-sky-500"
@@ -2307,221 +2765,13 @@ function ChapterSection({
         </div>
       </div>
 
-      {/* Inline Content Creator Tray (Never gets clipped by dropdown overflow) */}
-      {!collapsed && showAddMenu && (
-        <div className="p-3 bg-slate-50/90 dark:bg-[#070A11] border-b border-slate-200 dark:border-slate-800 space-y-2.5 animate-fade-in">
-          <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-slate-800">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-600 dark:text-sky-400">
-              Select Content Type to Add
-            </span>
-            <button
-              type="button"
-              onClick={() => setShowAddMenu(false)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
+      {/* Main Chapter Content Add Tray */}
+      {!collapsed && showAddMenu && renderAddMenu()}
 
-          <div className="space-y-2">
-            {/* 1. Lecture Video */}
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddMenu(false);
-                  onAddLessonWithType("LECTURE_VIDEO");
-                }}
-                className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-sky-200/80 dark:border-sky-500/25 hover:border-sky-400 hover:bg-sky-50/40 dark:hover:bg-sky-500/10 text-left transition-all group cursor-pointer shadow-2xs"
-              >
-                <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-                  <PlayCircle className="w-4 h-4 stroke-[2]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-300">
-                    Lecture Video (Lec)
-                  </p>
-                  <p className="text-[10px] text-slate-400">YouTube, Vimeo or MP4 + notes</p>
-                </div>
-              </button>
-            </div>
-
-            {/* 2. Practice Assignments */}
-            <div className="space-y-1">
-              <div className="px-1 text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                Practice Assignment
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddMenu(false);
-                    onAddLessonWithType("PRACTICE_MCQ");
-                  }}
-                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-amber-200/70 dark:border-amber-500/20 hover:border-amber-400 hover:bg-amber-50/40 dark:hover:bg-amber-500/10 text-left transition-all group cursor-pointer shadow-2xs"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                    <FileQuestion className="w-3.5 h-3.5 stroke-[2]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-amber-600">
-                      MCQ Quiz
-                    </p>
-                    <p className="text-[9px] text-slate-400 truncate">Knowledge check</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddMenu(false);
-                    onAddLessonWithType("PRACTICE_PROJECT");
-                  }}
-                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-amber-200/70 dark:border-amber-500/20 hover:border-amber-400 hover:bg-amber-50/40 dark:hover:bg-amber-500/10 text-left transition-all group cursor-pointer shadow-2xs"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                    <Code className="w-3.5 h-3.5 stroke-[2]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-amber-600">
-                      Practice Lab
-                    </p>
-                    <p className="text-[9px] text-slate-400 truncate">Hands-on project</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* 3. Test Assignments */}
-            <div className="space-y-1">
-              <div className="px-1 text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                Test Assignment (Evaluated)
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddMenu(false);
-                    onAddLessonWithType("TEST_CODING");
-                  }}
-                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-indigo-200/70 dark:border-indigo-500/20 hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-500/10 text-left transition-all group cursor-pointer shadow-2xs"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                    <Code2 className="w-3.5 h-3.5 stroke-[2]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-indigo-600">
-                      Coding Test
-                    </p>
-                    <p className="text-[9px] text-slate-400 truncate">Autograded</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddMenu(false);
-                    onAddLessonWithType("TEST_VIVA");
-                  }}
-                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-purple-200/70 dark:border-purple-500/20 hover:border-purple-400 hover:bg-purple-50/40 dark:hover:bg-purple-500/10 text-left transition-all group cursor-pointer shadow-2xs"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-                    <Video className="w-3.5 h-3.5 stroke-[2]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-purple-600">
-                      Video Viva
-                    </p>
-                    <p className="text-[9px] text-slate-400 truncate">Demo link</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddMenu(false);
-                    onAddLessonWithType("TEST_SUBJECTIVE");
-                  }}
-                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-rose-200/70 dark:border-rose-500/20 hover:border-rose-400 hover:bg-rose-50/40 dark:hover:bg-rose-500/10 text-left transition-all group cursor-pointer shadow-2xs"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                    <BookOpen className="w-3.5 h-3.5 stroke-[2]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-rose-600">
-                      Subjective
-                    </p>
-                    <p className="text-[9px] text-slate-400 truncate">Rubric graded</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddMenu(false);
-                    onAddLessonWithType("TEST_PROJECT");
-                  }}
-                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-emerald-200/70 dark:border-emerald-500/20 hover:border-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-500/10 text-left transition-all group cursor-pointer shadow-2xs"
-                >
-                  <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                    <Award className="w-3.5 h-3.5 stroke-[2]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-emerald-600">
-                      Capstone Project
-                    </p>
-                    <p className="text-[9px] text-slate-400 truncate">Evaluated build</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* 4. Folder / Resource Section */}
-            <div className="space-y-1">
-              <div className="px-1 text-[9px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">
-                Folder / Sub-Section
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddMenu(false);
-                  onAddLessonWithType("FOLDER");
-                }}
-                className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-teal-200/80 dark:border-teal-500/25 hover:border-teal-400 hover:bg-teal-50/40 dark:hover:bg-teal-500/10 text-left transition-all group cursor-pointer shadow-2xs"
-              >
-                <div className="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
-                  <FolderPlus className="w-4 h-4 stroke-[2]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-300">
-                    Folder / Resources Container
-                  </p>
-                  <p className="text-[10px] text-slate-400">Group notes, downloadable files & materials</p>
-                </div>
-              </button>
-            </div>
-
-            {/* Custom Option */}
-            <div className="pt-1 border-t border-slate-200/60 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddMenu(false);
-                  setShowCustomInput(true);
-                }}
-                className="w-full text-left px-2 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-white dark:hover:bg-slate-800/80 rounded-lg cursor-pointer"
-              >
-                + Custom Lesson Title...
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Chapter Lessons List */}
+      {/* Chapter Lessons & Folders Tree */}
       {!collapsed && (
-        <div className="p-2 space-y-1">
-          {moduleLessons.length === 0 ? (
+        <div className="p-2 space-y-1.5">
+          {rootLessons.length === 0 ? (
             <div className="py-4 px-2 text-[11px] text-slate-400 text-center space-y-1">
               <p>No content in this chapter yet.</p>
               {!showAddMenu && (
@@ -2535,78 +2785,246 @@ function ChapterSection({
               )}
             </div>
           ) : (
-            moduleLessons.map((les: any, lIdx: number) => {
-              const isSelected = activeLessonId === les.lessonId;
-              const badge = getLessonBadge(les);
-              const displayTitle = les.title && les.title.trim().length > 0 ? les.title : les.lessonId;
-              const isFirstLesson = lIdx === 0;
-              const isLastLesson = lIdx === moduleLessons.length - 1;
+            rootLessons.map((item: any) => {
+              const isFolder = item.isFolder;
+              const isSelected = activeLessonId === item.lessonId;
+              const badge = getLessonBadge(item);
+              const displayTitle = item.title && item.title.trim().length > 0 ? item.title : item.lessonId;
+              const childItems = isFolder ? folderChildrenMap[item.lessonId] || [] : [];
+              const folderExpanded = isFolder && isFolderOpen(item.lessonId);
+              const isFolderDropTarget = dragOverFolderId === item.lessonId;
+              const isItemDragOver = dragOverItemId === item.lessonId;
 
+              if (isFolder) {
+                return (
+                  <div
+                    key={item.lessonId}
+                    draggable
+                    onDragStart={(e) => handleItemDragStart(e, item.lessonId, null)}
+                    onDragOver={(e) => {
+                      handleItemDragOver(e, item.lessonId);
+                      handleFolderDropTargetOver(e, item.lessonId);
+                    }}
+                    onDrop={(e) => handleItemDrop(e, item.lessonId, null)}
+                    className={`rounded-xl border transition-all ${
+                      isFolderDropTarget
+                        ? "border-teal-500 bg-teal-500/10 shadow-sm"
+                        : isItemDragOver
+                        ? "border-sky-500 bg-sky-500/10"
+                        : isSelected
+                        ? "border-teal-500/40 bg-teal-500/5 shadow-2xs"
+                        : "border-teal-200/70 dark:border-teal-900/40 bg-teal-50/30 dark:bg-teal-950/10"
+                    }`}
+                  >
+                    {/* Folder Container Header */}
+                    <div className="p-2 flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <div
+                          title="Drag to reorder folder"
+                          className="cursor-grab active:cursor-grabbing text-teal-600/70 dark:text-teal-400/70 hover:text-teal-800 p-0.5"
+                        >
+                          <GripVertical className="w-3.5 h-3.5" />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => toggleFolder(item.lessonId, e)}
+                          className="text-teal-600 dark:text-teal-400 p-0.5 cursor-pointer hover:bg-teal-100/50 rounded"
+                        >
+                          {folderExpanded ? (
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          ) : (
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onSelectLesson(item.lessonId)}
+                          className="flex items-center gap-1.5 text-left truncate flex-1 cursor-pointer"
+                        >
+                          {folderExpanded ? (
+                            <FolderOpen className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                          ) : (
+                            <Folder className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                          )}
+                          <span className="text-xs font-bold text-teal-950 dark:text-teal-200 truncate">
+                            {displayTitle}
+                          </span>
+                          <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-teal-200/60 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300 shrink-0">
+                            {childItems.length} item{childItems.length === 1 ? "" : "s"}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Folder Actions: + Add inside Folder & Delete */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!folderExpanded) {
+                              setOpenFolders((prev) => ({ ...prev, [item.lessonId]: true }));
+                            }
+                            setActiveFolderAddMenuId(
+                              activeFolderAddMenuId === item.lessonId ? null : item.lessonId
+                            );
+                          }}
+                          title="Add lesson into this folder"
+                          className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-bold rounded-md bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300 hover:bg-teal-200 cursor-pointer"
+                        >
+                          <Plus className="w-2.5 h-2.5 stroke-[3]" />
+                          <span>Add</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteLesson(e, item.lessonId)}
+                          title="Delete folder"
+                          className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Inline Add Menu for Folder */}
+                    {activeFolderAddMenuId === item.lessonId && renderAddMenu(item.lessonId)}
+
+                    {/* Nested Child Lessons inside Folder */}
+                    {folderExpanded && (
+                      <div
+                        onDragOver={(e) => handleFolderDropTargetOver(e, item.lessonId)}
+                        onDrop={(e) => handleDropIntoFolder(e, item.lessonId)}
+                        className="pl-5 pr-2 pb-2 space-y-1 border-t border-teal-200/50 dark:border-teal-900/40 pt-1.5"
+                      >
+                        {childItems.length === 0 ? (
+                          <div className="p-2 text-center text-[10px] text-teal-700/70 dark:text-teal-300/70 border border-dashed border-teal-300/60 dark:border-teal-800/60 rounded-lg">
+                            📁 Drag items here or click + Add to populate this folder
+                          </div>
+                        ) : (
+                          childItems.map((cLes: any) => {
+                            const isChildSelected = activeLessonId === cLes.lessonId;
+                            const cBadge = getLessonBadge(cLes);
+                            const cDisplayTitle =
+                              cLes.title && cLes.title.trim().length > 0 ? cLes.title : cLes.lessonId;
+
+                            return (
+                              <div
+                                key={cLes.lessonId}
+                                draggable
+                                onDragStart={(e) => handleItemDragStart(e, cLes.lessonId, item.lessonId)}
+                                onDragOver={(e) => handleItemDragOver(e, cLes.lessonId)}
+                                onDrop={(e) => handleItemDrop(e, cLes.lessonId, item.lessonId)}
+                                className={`group/child w-full rounded-lg transition-all flex items-center justify-between gap-1.5 p-1.5 ${
+                                  isChildSelected
+                                    ? "bg-sky-500/15 text-sky-600 dark:text-sky-400 font-bold border border-sky-500/30"
+                                    : "bg-white/80 dark:bg-[#0B1120]/80 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800/70 border border-slate-200/60 dark:border-slate-800/60"
+                                }`}
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                  <div
+                                    title="Drag to reorder or move out"
+                                    className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-700 p-0.5"
+                                  >
+                                    <GripVertical className="w-3 h-3" />
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => onSelectLesson(cLes.lessonId)}
+                                    className="flex-1 text-left min-w-0 flex items-center gap-1.5 cursor-pointer"
+                                  >
+                                    <span className="text-xs font-semibold truncate flex-1">
+                                      {cDisplayTitle}
+                                    </span>
+                                    <span
+                                      className={`text-[8px] font-mono uppercase px-1.5 py-0.5 rounded-full shrink-0 ${cBadge.bg}`}
+                                    >
+                                      {cBadge.label}
+                                    </span>
+                                  </button>
+                                </div>
+
+                                {/* Child Actions: Extract out of Folder & Delete */}
+                                <div className="flex items-center gap-0.5 shrink-0 opacity-80 group-hover/child:opacity-100">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleExtractFromFolder(e, cLes)}
+                                    title="Extract out of folder into chapter root"
+                                    className="p-1 rounded text-slate-400 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-950/40 cursor-pointer"
+                                  >
+                                    <MoveUpRight className="w-3 h-3 stroke-[2.2]" />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleDeleteLesson(e, cLes.lessonId)}
+                                    title="Delete item"
+                                    className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3 h-3 stroke-[2]" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // Normal root lesson
               return (
                 <div
-                  key={les.lessonId}
+                  key={item.lessonId}
+                  draggable
+                  onDragStart={(e) => handleItemDragStart(e, item.lessonId, null)}
+                  onDragOver={(e) => handleItemDragOver(e, item.lessonId)}
+                  onDrop={(e) => handleItemDrop(e, item.lessonId, null)}
                   className={`group/item w-full rounded-xl transition-all flex items-center justify-between gap-1.5 p-2 ${
-                    isSelected
+                    isItemDragOver
+                      ? "border-sky-500 bg-sky-500/10 shadow-xs"
+                      : isSelected
                       ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold border border-sky-500/30 shadow-2xs"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent"
                   }`}
                 >
-                  {/* Click to edit lesson */}
-                  <button
-                    type="button"
-                    onClick={() => onSelectLesson(les.lessonId)}
-                    className="flex-1 text-left min-w-0 flex items-center gap-2 cursor-pointer"
-                  >
-                    {badge.isFolder ? (
-                      <Folder className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-                    ) : null}
-                    <span className="text-xs font-semibold truncate flex-1">
-                      {displayTitle}
-                    </span>
-                    <span
-                      className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full shrink-0 ${badge.bg}`}
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <div
+                      title="Drag to reorder or drag into folder"
+                      className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5"
                     >
-                      {badge.label}
-                    </span>
-                  </button>
+                      <GripVertical className="w-3.5 h-3.5" />
+                    </div>
 
-                  {/* Shifting & Moving Action Controls */}
+                    <button
+                      type="button"
+                      onClick={() => onSelectLesson(item.lessonId)}
+                      className="flex-1 text-left min-w-0 flex items-center gap-2 cursor-pointer"
+                    >
+                      <span className="text-xs font-semibold truncate flex-1">
+                        {displayTitle}
+                      </span>
+                      <span
+                        className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full shrink-0 ${badge.bg}`}
+                      >
+                        {badge.label}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Actions: Move to Chapter Dropdown & Delete */}
                   <div className="flex items-center gap-0.5 shrink-0 opacity-80 group-hover/item:opacity-100 transition-opacity">
-                    <button
-                      type="button"
-                      disabled={isFirstLesson}
-                      onClick={(e) => handleMoveLesson(e, lIdx, "UP")}
-                      title="Move Up"
-                      className={`p-1 rounded transition-colors ${
-                        isFirstLesson
-                          ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
-                          : "text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
-                      }`}
-                    >
-                      <ArrowUp className="w-3 h-3 stroke-[2.2]" />
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={isLastLesson}
-                      onClick={(e) => handleMoveLesson(e, lIdx, "DOWN")}
-                      title="Move Down"
-                      className={`p-1 rounded transition-colors ${
-                        isLastLesson
-                          ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
-                          : "text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
-                      }`}
-                    >
-                      <ArrowDown className="w-3 h-3 stroke-[2.2]" />
-                    </button>
-
                     {otherModules.length > 0 && (
                       <div className="relative">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setMovingLessonId(movingLessonId === les.lessonId ? null : les.lessonId);
+                            setMovingLessonId(movingLessonId === item.lessonId ? null : item.lessonId);
                           }}
                           title="Move to another chapter"
                           className="p-1 rounded text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
@@ -2614,7 +3032,7 @@ function ChapterSection({
                           <FolderInput className="w-3 h-3 stroke-[2]" />
                         </button>
 
-                        {movingLessonId === les.lessonId && (
+                        {movingLessonId === item.lessonId && (
                           <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 p-1.5 space-y-1 animate-fade-in">
                             <p className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
                               Move to chapter:
@@ -2623,7 +3041,7 @@ function ChapterSection({
                               <button
                                 key={om.moduleId}
                                 type="button"
-                                onClick={(e) => handleMoveToModule(e, les.lessonId, om.moduleId)}
+                                onClick={(e) => handleMoveToModule(e, item.lessonId, om.moduleId)}
                                 className="w-full text-left px-2 py-1 text-xs font-semibold rounded-lg hover:bg-sky-50 dark:hover:bg-sky-500/20 text-slate-700 dark:text-slate-200 truncate cursor-pointer"
                               >
                                 Chapter {omIdx + 1}: {om.title || "Module"}
@@ -2636,7 +3054,7 @@ function ChapterSection({
 
                     <button
                       type="button"
-                      onClick={(e) => handleDeleteLesson(e, les.lessonId)}
+                      onClick={(e) => handleDeleteLesson(e, item.lessonId)}
                       title="Remove lesson"
                       className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                     >
@@ -2671,8 +3089,9 @@ function ChapterSection({
                   type="button"
                   onClick={() => {
                     if (customLessonTitle.trim()) {
-                      onAddLessonWithType("CUSTOM", customLessonTitle.trim());
+                      onAddLessonWithType("CUSTOM", customLessonTitle.trim(), customFolderTargetId);
                       setCustomLessonTitle("");
+                      setCustomFolderTargetId(undefined);
                       setShowCustomInput(false);
                     }
                   }}
@@ -2688,3 +3107,4 @@ function ChapterSection({
     </div>
   );
 }
+
