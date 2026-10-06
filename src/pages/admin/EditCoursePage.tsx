@@ -2135,253 +2135,282 @@ function ChapterSection({
   const otherModules = allModules.filter((m) => m.moduleId !== moduleId);
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] overflow-hidden shadow-2xs">
-      {/* Chapter Bar */}
-      <div className="p-2.5 sm:p-3 flex items-center justify-between bg-slate-50/70 dark:bg-[#070A11]/60 border-b border-slate-100 dark:border-slate-800/60 gap-2">
+    <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] shadow-2xs">
+      {/* Chapter Header */}
+      <div className="p-3 flex items-center justify-between bg-slate-50/70 dark:bg-[#070A11]/60 border-b border-slate-100 dark:border-slate-800/60 gap-2">
         <button
+          type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center gap-2 text-left truncate flex-1 cursor-pointer min-w-0"
+          className="flex items-center gap-2 text-left truncate flex-1 min-w-0 cursor-pointer"
         >
           {collapsed ? (
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+            <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
           ) : (
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
           )}
           <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
             Chapter {position}{moduleTitle ? ` — ${moduleTitle}` : ""}
           </span>
         </button>
 
-        {/* Chapter Actions: Shifting, Add, Delete */}
-        <div className="flex items-center gap-1 shrink-0 relative">
-          {/* Move Chapter Up / Down */}
-          <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-lg p-0.5">
-            <button
-              type="button"
-              disabled={isFirst}
-              onClick={() => onMoveChapter("UP")}
-              title="Shift Chapter Up"
-              className={`p-1 rounded transition-colors ${
-                isFirst
-                  ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-              }`}
-            >
-              <ArrowUp className="w-3 h-3 stroke-[2.2]" />
-            </button>
-            <button
-              type="button"
-              disabled={isLast}
-              onClick={() => onMoveChapter("DOWN")}
-              title="Shift Chapter Down"
-              className={`p-1 rounded transition-colors ${
-                isLast
-                  ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-              }`}
-            >
-              <ArrowDown className="w-3 h-3 stroke-[2.2]" />
-            </button>
-          </div>
+        {/* Chapter Actions: Shift, Add, Delete */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            disabled={isFirst}
+            onClick={() => onMoveChapter("UP")}
+            title="Shift Chapter Up"
+            className={`p-1 rounded-lg transition-colors ${
+              isFirst
+                ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 cursor-pointer"
+            }`}
+          >
+            <ArrowUp className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            disabled={isLast}
+            onClick={() => onMoveChapter("DOWN")}
+            title="Shift Chapter Down"
+            className={`p-1 rounded-lg transition-colors ${
+              isLast
+                ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 cursor-pointer"
+            }`}
+          >
+            <ArrowDown className="w-3.5 h-3.5" />
+          </button>
 
-          {/* Smart "+ Add" Dropdown Menu */}
-          <div className="relative" ref={addMenuRef}>
-            <button
-              type="button"
-              onClick={() => setShowAddMenu(!showAddMenu)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-500/25 border border-sky-200/80 dark:border-sky-500/30 transition-all cursor-pointer shadow-2xs"
-            >
-              <Plus className="w-3 h-3 stroke-[3]" />
-              <span>Add</span>
-              <ChevronDown className="w-3 h-3 text-sky-500" />
-            </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (collapsed) setCollapsed(false);
+              setShowAddMenu(!showAddMenu);
+            }}
+            title="Add Lesson or Assessment"
+            className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer shadow-2xs ${
+              showAddMenu
+                ? "bg-sky-500 text-white border-sky-500"
+                : "bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-500/25 border-sky-200/80 dark:border-sky-500/30"
+            }`}
+          >
+            <Plus className="w-3 h-3 stroke-[3]" />
+            <span>Add</span>
+          </button>
 
-            {showAddMenu && (
-              <div className="absolute right-0 top-full mt-1.5 w-64 bg-white dark:bg-[#0D1527] border border-slate-200 dark:border-sky-500/30 rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-fade-in">
-                <div className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                  Select Content Type
-                </div>
-
-                {/* 1. Lecture Video */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddMenu(false);
-                    onAddLessonWithType("LECTURE_VIDEO");
-                  }}
-                  className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-sky-50 dark:hover:bg-sky-500/15 transition-colors group cursor-pointer"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-                    <PlayCircle className="w-4 h-4 stroke-[2]" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-300">
-                      Lecture Video (Lec)
-                    </p>
-                    <p className="text-[10px] text-slate-400 truncate">Video link & reading notes</p>
-                  </div>
-                </button>
-
-                {/* 2. Practice Assignment Group */}
-                <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
-                  <div className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                    Practice Assignment
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddMenu(false);
-                      onAddLessonWithType("PRACTICE_MCQ");
-                    }}
-                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors group cursor-pointer"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                      <FileQuestion className="w-4 h-4 stroke-[2]" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-300">
-                        MCQ Quiz
-                      </p>
-                      <p className="text-[10px] text-slate-400 truncate">Knowledge check practice</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddMenu(false);
-                      onAddLessonWithType("PRACTICE_PROJECT");
-                    }}
-                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors group cursor-pointer"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                      <Code className="w-4 h-4 stroke-[2]" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-300">
-                        Practice Project Lab
-                      </p>
-                      <p className="text-[10px] text-slate-400 truncate">Ungraded hands-on challenge</p>
-                    </div>
-                  </button>
-                </div>
-
-                {/* 3. Test Assignment Group */}
-                <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
-                  <div className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                    Test Assignment (Evaluated)
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddMenu(false);
-                      onAddLessonWithType("TEST_CODING");
-                    }}
-                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-indigo-50 dark:hover:bg-indigo-500/15 transition-colors group cursor-pointer"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                      <Code2 className="w-4 h-4 stroke-[2]" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
-                        Coding Assessment
-                      </p>
-                      <p className="text-[10px] text-slate-400 truncate">Auto-executed test cases</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddMenu(false);
-                      onAddLessonWithType("TEST_VIVA");
-                    }}
-                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-purple-50 dark:hover:bg-purple-500/15 transition-colors group cursor-pointer"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-                      <Video className="w-4 h-4 stroke-[2]" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-300">
-                        Video Viva Walkthrough
-                      </p>
-                      <p className="text-[10px] text-slate-400 truncate">Screen recording demo link</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddMenu(false);
-                      onAddLessonWithType("TEST_SUBJECTIVE");
-                    }}
-                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-rose-50 dark:hover:bg-rose-500/15 transition-colors group cursor-pointer"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                      <BookOpen className="w-4 h-4 stroke-[2]" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-300">
-                        Subjective Architecture
-                      </p>
-                      <p className="text-[10px] text-slate-400 truncate">Rubric-graded rationale</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddMenu(false);
-                      onAddLessonWithType("TEST_PROJECT");
-                    }}
-                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-emerald-50 dark:hover:bg-emerald-500/15 transition-colors group cursor-pointer"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                      <Award className="w-4 h-4 stroke-[2]" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-300">
-                        Capstone Project
-                      </p>
-                      <p className="text-[10px] text-slate-400 truncate">Evaluated repo & deployment</p>
-                    </div>
-                  </button>
-                </div>
-
-                {/* 4. Custom Title Option */}
-                <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAddMenu(false);
-                      setShowCustomInput(true);
-                    }}
-                    className="w-full text-left px-2 py-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
-                  >
-                    + Custom Lesson Title...
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Delete Chapter Button */}
           <button
             type="button"
             onClick={onDeleteChapter}
             title="Delete this chapter"
-            className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
           >
-            <Trash2 className="w-3.5 h-3.5 stroke-[2]" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
+      {/* Inline Content Creator Tray (Never gets clipped by dropdown overflow) */}
+      {!collapsed && showAddMenu && (
+        <div className="p-3 bg-slate-50/90 dark:bg-[#070A11] border-b border-slate-200 dark:border-slate-800 space-y-2.5 animate-fade-in">
+          <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-slate-800">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-600 dark:text-sky-400">
+              Select Content Type to Add
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowAddMenu(false)}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {/* 1. Lecture Video */}
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddMenu(false);
+                  onAddLessonWithType("LECTURE_VIDEO");
+                }}
+                className="w-full flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-sky-200/80 dark:border-sky-500/25 hover:border-sky-400 hover:bg-sky-50/40 dark:hover:bg-sky-500/10 text-left transition-all group cursor-pointer shadow-2xs"
+              >
+                <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                  <PlayCircle className="w-4 h-4 stroke-[2]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-300">
+                    Lecture Video (Lec)
+                  </p>
+                  <p className="text-[10px] text-slate-400">YouTube, Vimeo or MP4 + notes</p>
+                </div>
+              </button>
+            </div>
+
+            {/* 2. Practice Assignments */}
+            <div className="space-y-1">
+              <div className="px-1 text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                Practice Assignment
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMenu(false);
+                    onAddLessonWithType("PRACTICE_MCQ");
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-amber-200/70 dark:border-amber-500/20 hover:border-amber-400 hover:bg-amber-50/40 dark:hover:bg-amber-500/10 text-left transition-all group cursor-pointer shadow-2xs"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <FileQuestion className="w-3.5 h-3.5 stroke-[2]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-amber-600">
+                      MCQ Quiz
+                    </p>
+                    <p className="text-[9px] text-slate-400 truncate">Knowledge check</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMenu(false);
+                    onAddLessonWithType("PRACTICE_PROJECT");
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-amber-200/70 dark:border-amber-500/20 hover:border-amber-400 hover:bg-amber-50/40 dark:hover:bg-amber-500/10 text-left transition-all group cursor-pointer shadow-2xs"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <Code className="w-3.5 h-3.5 stroke-[2]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-amber-600">
+                      Practice Lab
+                    </p>
+                    <p className="text-[9px] text-slate-400 truncate">Hands-on project</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* 3. Test Assignments */}
+            <div className="space-y-1">
+              <div className="px-1 text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                Test Assignment (Evaluated)
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMenu(false);
+                    onAddLessonWithType("TEST_CODING");
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-indigo-200/70 dark:border-indigo-500/20 hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-500/10 text-left transition-all group cursor-pointer shadow-2xs"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <Code2 className="w-3.5 h-3.5 stroke-[2]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-indigo-600">
+                      Coding Test
+                    </p>
+                    <p className="text-[9px] text-slate-400 truncate">Autograded</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMenu(false);
+                    onAddLessonWithType("TEST_VIVA");
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-purple-200/70 dark:border-purple-500/20 hover:border-purple-400 hover:bg-purple-50/40 dark:hover:bg-purple-500/10 text-left transition-all group cursor-pointer shadow-2xs"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <Video className="w-3.5 h-3.5 stroke-[2]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-purple-600">
+                      Video Viva
+                    </p>
+                    <p className="text-[9px] text-slate-400 truncate">Demo link</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMenu(false);
+                    onAddLessonWithType("TEST_SUBJECTIVE");
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-rose-200/70 dark:border-rose-500/20 hover:border-rose-400 hover:bg-rose-50/40 dark:hover:bg-rose-500/10 text-left transition-all group cursor-pointer shadow-2xs"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <BookOpen className="w-3.5 h-3.5 stroke-[2]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-rose-600">
+                      Subjective
+                    </p>
+                    <p className="text-[9px] text-slate-400 truncate">Rubric graded</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMenu(false);
+                    onAddLessonWithType("TEST_PROJECT");
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-[#0B1120] border border-emerald-200/70 dark:border-emerald-500/20 hover:border-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-500/10 text-left transition-all group cursor-pointer shadow-2xs"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <Award className="w-3.5 h-3.5 stroke-[2]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-emerald-600">
+                      Capstone Project
+                    </p>
+                    <p className="text-[9px] text-slate-400 truncate">Evaluated build</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Option */}
+            <div className="pt-1 border-t border-slate-200/60 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddMenu(false);
+                  setShowCustomInput(true);
+                }}
+                className="w-full text-left px-2 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-white dark:hover:bg-slate-800/80 rounded-lg cursor-pointer"
+              >
+                + Custom Lesson Title...
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chapter Lessons List */}
       {!collapsed && (
         <div className="p-2 space-y-1">
-          {/* Lessons List */}
           {moduleLessons.length === 0 ? (
             <div className="py-4 px-2 text-[11px] text-slate-400 text-center space-y-1">
               <p>No content in this chapter yet.</p>
-              <p className="text-[10px] text-sky-600 dark:text-sky-400 font-medium">
-                Click "+ Add" above to add a Lecture, Practice, or Test.
-              </p>
+              {!showAddMenu && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddMenu(true)}
+                  className="text-[11px] text-sky-600 dark:text-sky-400 font-bold hover:underline cursor-pointer"
+                >
+                  + Add Lecture or Assignment
+                </button>
+              )}
             </div>
           ) : (
             moduleLessons.map((les: any, lIdx: number) => {
@@ -2416,9 +2445,8 @@ function ChapterSection({
                     </span>
                   </button>
 
-                  {/* Shifting & Moving Action Controls (visible on hover / active) */}
+                  {/* Shifting & Moving Action Controls */}
                   <div className="flex items-center gap-0.5 shrink-0 opacity-80 group-hover/item:opacity-100 transition-opacity">
-                    {/* Shift Up */}
                     <button
                       type="button"
                       disabled={isFirstLesson}
@@ -2433,7 +2461,6 @@ function ChapterSection({
                       <ArrowUp className="w-3 h-3 stroke-[2.2]" />
                     </button>
 
-                    {/* Shift Down */}
                     <button
                       type="button"
                       disabled={isLastLesson}
@@ -2448,7 +2475,6 @@ function ChapterSection({
                       <ArrowDown className="w-3 h-3 stroke-[2.2]" />
                     </button>
 
-                    {/* Move to another Chapter (if other modules exist) */}
                     {otherModules.length > 0 && (
                       <div className="relative">
                         <button
@@ -2483,7 +2509,6 @@ function ChapterSection({
                       </div>
                     )}
 
-                    {/* Delete Lesson */}
                     <button
                       type="button"
                       onClick={(e) => handleDeleteLesson(e, les.lessonId)}
