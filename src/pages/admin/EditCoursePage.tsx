@@ -34,14 +34,24 @@ import {
   UserCheck,
   ShieldAlert,
   X,
+  ArrowUp,
+  ArrowDown,
+  FolderInput,
+  Layers,
+  Sparkles,
 } from "lucide-react";
 import {
   useGetAdminCourseByIdQuery,
   useGetAdminCourseModulesQuery,
   useAttachAdminCourseModuleMutation,
+  useDetachAdminCourseModuleMutation,
+  useReorderAdminCourseModulesMutation,
   useCreateAdminModuleMutation,
   useGetAdminModuleLessonsQuery,
   useAttachAdminModuleLessonMutation,
+  useDetachAdminModuleLessonMutation,
+  useReorderAdminModuleLessonsMutation,
+  useMoveAdminModuleLessonMutation,
   useCreateAdminLessonMutation,
   useGetAdminLessonByIdQuery,
   useUpdateAdminLessonMutation,
@@ -72,8 +82,13 @@ export default function EditCoursePage() {
   // Mutations
   const [createModule] = useCreateAdminModuleMutation();
   const [attachModule] = useAttachAdminCourseModuleMutation();
+  const [detachModule] = useDetachAdminCourseModuleMutation();
+  const [reorderModulesApi] = useReorderAdminCourseModulesMutation();
   const [createLesson] = useCreateAdminLessonMutation();
   const [attachLesson] = useAttachAdminModuleLessonMutation();
+  const [detachLesson] = useDetachAdminModuleLessonMutation();
+  const [reorderLessonsApi] = useReorderAdminModuleLessonsMutation();
+  const [moveLessonApi] = useMoveAdminModuleLessonMutation();
   const [updateLessonMutation] = useUpdateAdminLessonMutation();
   const [clearCourseModulesMutation] = useClearAdminCourseModulesMutation();
 
@@ -484,34 +499,209 @@ export default function EditCoursePage() {
     }
   };
 
-  // Create & attach a new Lesson
-  const handleAddLesson = async (moduleId: string) => {
-    if (!newLessonTitle.trim()) return;
+  // Reorder Chapters
+  const handleMoveChapter = async (index: number, direction: "UP" | "DOWN") => {
+    if (direction === "UP" && index === 0) return;
+    if (direction === "DOWN" && index === courseModules.length - 1) return;
 
+    const targetIndex = direction === "UP" ? index - 1 : index + 1;
+    const newOrder = [...courseModules];
+    const temp = newOrder[index];
+    newOrder[index] = newOrder[targetIndex];
+    newOrder[targetIndex] = temp;
+
+    const moduleIds = newOrder.map((m: any) => m.moduleId);
+    try {
+      await reorderModulesApi({ courseId, moduleIds }).unwrap();
+      refetchModules();
+    } catch (err) {
+      console.error("Failed to reorder chapters:", err);
+    }
+  };
+
+  // Delete Chapter
+  const handleDeleteChapter = async (moduleId: string) => {
+    if (!window.confirm("Are you sure you want to remove this chapter and its lessons from this course?")) return;
+    try {
+      await detachModule({ courseId, moduleId }).unwrap();
+      refetchModules();
+    } catch (err) {
+      console.error("Failed to remove chapter:", err);
+    }
+  };
+
+  // Create & attach a pre-configured Template Lesson
+  const handleAddLessonWithType = async (
+    moduleId: string,
+    lessonTypeKey:
+      | "LECTURE_VIDEO"
+      | "PRACTICE_MCQ"
+      | "PRACTICE_PROJECT"
+      | "TEST_CODING"
+      | "TEST_VIVA"
+      | "TEST_SUBJECTIVE"
+      | "TEST_PROJECT"
+      | "CUSTOM",
+    customTitle?: string
+  ) => {
     try {
       const slug = `${course?.slug || "course"}-les-${Date.now()}`;
-      const defaultContent = JSON.stringify({
-        type: "READING",
-        category: "LECTURE",
-        curriculumMode: "LECTURE",
-        isFreePreview: false,
-        contentMarkdown: "Write lesson reading notes here...",
-        codeLanguage: "typescript",
-        codeSnippet: "",
-      });
+      let title = customTitle || "New Lesson";
+      let payloadContent: any = {};
+      let videoUrl: string | undefined = undefined;
+
+      switch (lessonTypeKey) {
+        case "LECTURE_VIDEO":
+          title = customTitle || "Lecture Video";
+          videoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1";
+          payloadContent = {
+            type: "VIDEO",
+            category: "LECTURE",
+            curriculumMode: "LECTURE",
+            videoUrl,
+            isFreePreview: false,
+            contentMarkdown: "Watch the lecture video end-to-end and prepare study notes.",
+          };
+          break;
+
+        case "PRACTICE_MCQ":
+          title = customTitle || "Practice Quiz (MCQ)";
+          payloadContent = {
+            type: "QUIZ",
+            category: "PRACTICE",
+            curriculumMode: "PRACTICE",
+            practiceType: "MCQ",
+            isFreePreview: false,
+            contentMarkdown: "Test your understanding with these practice multiple choice questions.",
+            quiz: {
+              passingScorePercent: 70,
+              questions: [
+                {
+                  id: `q-${Date.now()}`,
+                  question: "What is the primary objective of this module?",
+                  options: ["Option A", "Option B", "Option C", "Option D"],
+                  correctOptionIndex: 0,
+                  explanation: "Option A is the correct answer based on lecture concepts.",
+                },
+              ],
+            },
+          };
+          break;
+
+        case "PRACTICE_PROJECT":
+          title = customTitle || "Hands-on Practice Lab";
+          payloadContent = {
+            type: "ASSIGNMENT",
+            category: "PRACTICE",
+            curriculumMode: "PRACTICE",
+            practiceType: "PROJECT",
+            isFreePreview: false,
+            contentMarkdown: "Build the lab project locally and verify the test results.",
+            assignment: {
+              instructions: "Follow instructions to build the feature and submit your repository or notes.",
+              allowedTypes: ["URL", "GITHUB"],
+              maxPoints: 100,
+            },
+          };
+          break;
+
+        case "TEST_CODING":
+          title = customTitle || "Coding Assessment Test";
+          payloadContent = {
+            type: "CODING_TEST",
+            category: "TEST",
+            curriculumMode: "TEST",
+            testType: "CODING_TEST",
+            isFreePreview: false,
+            contentMarkdown: "Write optimal code solving the problem specification.",
+            codingTest: {
+              starterCode: "def solution():\n    # Implement solution here\n    pass\n",
+              language: "python",
+              testCases: [
+                { id: "tc-1", input: "1, 2", expectedOutput: "3", isHidden: false },
+                { id: "tc-2", input: "5, 10", expectedOutput: "15", isHidden: true },
+              ],
+              maxScore: 100,
+            },
+          };
+          break;
+
+        case "TEST_VIVA":
+          title = customTitle || "Video Viva Demonstration";
+          payloadContent = {
+            type: "VIDEO_TEST",
+            category: "TEST",
+            curriculumMode: "TEST",
+            testType: "VIDEO_TEST",
+            isFreePreview: false,
+            contentMarkdown: "Record a short video walkthrough explaining your architecture and codebase.",
+            videoTest: {
+              prompt: "Demonstrate working software and explain key design decisions.",
+              maxDurationSec: 180,
+              maxScore: 100,
+            },
+          };
+          break;
+
+        case "TEST_SUBJECTIVE":
+          title = customTitle || "Subjective Architecture Test";
+          payloadContent = {
+            type: "SUBJECTIVE_TEST",
+            category: "TEST",
+            curriculumMode: "TEST",
+            testType: "SUBJECTIVE_TEST",
+            isFreePreview: false,
+            contentMarkdown: "Answer the engineering rationale and system design questions below.",
+            subjectiveTest: {
+              prompt: "Explain system trade-offs and engineering design patterns.",
+              rubrics: "Technical accuracy (40 pts), Architecture depth (30 pts), Clarity (30 pts)",
+              maxScore: 100,
+            },
+          };
+          break;
+
+        case "TEST_PROJECT":
+          title = customTitle || "Capstone Evaluated Project";
+          payloadContent = {
+            type: "ASSIGNMENT",
+            category: "TEST",
+            curriculumMode: "TEST",
+            testType: "PROJECT",
+            isFreePreview: false,
+            contentMarkdown: "Deploy your final project and submit for mentor evaluation.",
+            assignment: {
+              instructions: "Submit production GitHub repository and live deployment URL.",
+              allowedTypes: ["URL", "GITHUB"],
+              maxPoints: 100,
+            },
+          };
+          break;
+
+        default:
+          title = customTitle || "New Lesson";
+          payloadContent = {
+            type: "READING",
+            category: "LECTURE",
+            curriculumMode: "LECTURE",
+            isFreePreview: false,
+            contentMarkdown: "Write lesson reading notes here...",
+          };
+          break;
+      }
 
       const created = await createLesson({
-        title: newLessonTitle.trim(),
+        title,
         slug,
         status: "DRAFT",
-        content: defaultContent,
+        content: JSON.stringify(payloadContent),
+        videoUrl,
         durationMinutes: 15,
       }).unwrap();
 
       await attachLesson({
         moduleId,
         lessonId: created.id,
-        position: 1,
+        position: 99,
       }).unwrap();
 
       setNewLessonTitle("");
@@ -521,6 +711,11 @@ export default function EditCoursePage() {
     } catch (err) {
       console.error("Failed to create lesson:", err);
     }
+  };
+
+  // Create & attach a new generic Lesson
+  const handleAddLesson = async (moduleId: string) => {
+    await handleAddLessonWithType(moduleId, "CUSTOM", newLessonTitle.trim() || undefined);
   };
 
 
@@ -760,13 +955,16 @@ export default function EditCoursePage() {
                   moduleId={cMod.moduleId}
                   moduleTitle={cMod.title}
                   position={idx + 1}
+                  isFirst={idx === 0}
+                  isLast={idx === courseModules.length - 1}
+                  allModules={courseModules}
                   activeLessonId={activeLessonId}
                   onSelectLesson={(lessonId) => setActiveLessonId(lessonId)}
-                  addingLessonForModuleId={addingLessonForModuleId}
-                  setAddingLessonForModuleId={setAddingLessonForModuleId}
-                  newLessonTitle={newLessonTitle}
-                  setNewLessonTitle={setNewLessonTitle}
-                  onAddLesson={handleAddLesson}
+                  onMoveChapter={(direction) => handleMoveChapter(idx, direction)}
+                  onDeleteChapter={() => handleDeleteChapter(cMod.moduleId)}
+                  onAddLessonWithType={(typeKey, customTitle) =>
+                    handleAddLessonWithType(cMod.moduleId, typeKey, customTitle)
+                  }
                 />
               ))
             )}
@@ -1780,31 +1978,115 @@ interface ChapterSectionProps {
   moduleId: string;
   moduleTitle?: string;
   position: number;
+  isFirst: boolean;
+  isLast: boolean;
+  allModules: any[];
   activeLessonId: string | null;
   onSelectLesson: (id: string) => void;
-  addingLessonForModuleId: string | null;
-  setAddingLessonForModuleId: (id: string | null) => void;
-  newLessonTitle: string;
-  setNewLessonTitle: (title: string) => void;
-  onAddLesson: (moduleId: string) => void;
+  onMoveChapter: (direction: "UP" | "DOWN") => void;
+  onDeleteChapter: () => void;
+  onAddLessonWithType: (
+    typeKey:
+      | "LECTURE_VIDEO"
+      | "PRACTICE_MCQ"
+      | "PRACTICE_PROJECT"
+      | "TEST_CODING"
+      | "TEST_VIVA"
+      | "TEST_SUBJECTIVE"
+      | "TEST_PROJECT"
+      | "CUSTOM",
+    customTitle?: string
+  ) => void;
 }
 
 function ChapterSection({
   moduleId,
   moduleTitle,
   position,
+  isFirst,
+  isLast,
+  allModules,
   activeLessonId,
   onSelectLesson,
-  addingLessonForModuleId,
-  setAddingLessonForModuleId,
-  newLessonTitle,
-  setNewLessonTitle,
-  onAddLesson,
+  onMoveChapter,
+  onDeleteChapter,
+  onAddLessonWithType,
 }: ChapterSectionProps) {
   const { data: moduleLessons = [] } = useGetAdminModuleLessonsQuery(moduleId, {
     refetchOnMountOrArgChange: true,
   });
+  const [reorderLessonsApi] = useReorderAdminModuleLessonsMutation();
+  const [moveLessonApi] = useMoveAdminModuleLessonMutation();
+  const [detachLessonApi] = useDetachAdminModuleLessonMutation();
+
   const [collapsed, setCollapsed] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customLessonTitle, setCustomLessonTitle] = useState("");
+  const [movingLessonId, setMovingLessonId] = useState<string | null>(null);
+
+  const addMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+        setShowAddMenu(false);
+      }
+    };
+    if (showAddMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showAddMenu]);
+
+  // Lesson reordering within chapter
+  const handleMoveLesson = async (e: React.MouseEvent, index: number, direction: "UP" | "DOWN") => {
+    e.stopPropagation();
+    if (direction === "UP" && index === 0) return;
+    if (direction === "DOWN" && index === moduleLessons.length - 1) return;
+
+    const targetIndex = direction === "UP" ? index - 1 : index + 1;
+    const newOrder = [...moduleLessons];
+    const temp = newOrder[index];
+    newOrder[index] = newOrder[targetIndex];
+    newOrder[targetIndex] = temp;
+
+    const lessonIds = newOrder.map((l: any) => l.lessonId);
+    try {
+      await reorderLessonsApi({ moduleId, lessonIds }).unwrap();
+    } catch (err) {
+      console.error("Failed to reorder lessons:", err);
+    }
+  };
+
+  // Move lesson to another chapter
+  const handleMoveToModule = async (e: React.MouseEvent, lessonId: string, targetModuleId: string) => {
+    e.stopPropagation();
+    try {
+      await moveLessonApi({
+        sourceModuleId: moduleId,
+        targetModuleId,
+        lessonId,
+      }).unwrap();
+      setMovingLessonId(null);
+    } catch (err) {
+      console.error("Failed to move lesson:", err);
+    }
+  };
+
+  // Delete lesson from chapter
+  const handleDeleteLesson = async (e: React.MouseEvent, lessonId: string) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to remove this lesson from this chapter?")) return;
+    try {
+      await detachLessonApi({ moduleId, lessonId }).unwrap();
+    } catch (err) {
+      console.error("Failed to delete lesson:", err);
+    }
+  };
 
   const getLessonBadge = (les: any) => {
     if (les.videoUrl) {
@@ -1850,13 +2132,15 @@ function ChapterSection({
     };
   };
 
+  const otherModules = allModules.filter((m) => m.moduleId !== moduleId);
+
   return (
     <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] overflow-hidden shadow-2xs">
       {/* Chapter Bar */}
-      <div className="p-3 flex items-center justify-between bg-slate-50/70 dark:bg-[#070A11]/60 border-b border-slate-100 dark:border-slate-800/60">
+      <div className="p-2.5 sm:p-3 flex items-center justify-between bg-slate-50/70 dark:bg-[#070A11]/60 border-b border-slate-100 dark:border-slate-800/60 gap-2">
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center gap-2 text-left truncate flex-1 cursor-pointer"
+          className="flex items-center gap-2 text-left truncate flex-1 cursor-pointer min-w-0"
         >
           {collapsed ? (
             <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
@@ -1868,71 +2152,380 @@ function ChapterSection({
           </span>
         </button>
 
-        <button
-          onClick={() => setAddingLessonForModuleId(moduleId)}
-          className="text-[11px] font-bold text-sky-600 dark:text-sky-400 hover:underline px-1.5 py-0.5 rounded cursor-pointer"
-        >
-          + Lesson
-        </button>
+        {/* Chapter Actions: Shifting, Add, Delete */}
+        <div className="flex items-center gap-1 shrink-0 relative">
+          {/* Move Chapter Up / Down */}
+          <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-lg p-0.5">
+            <button
+              type="button"
+              disabled={isFirst}
+              onClick={() => onMoveChapter("UP")}
+              title="Shift Chapter Up"
+              className={`p-1 rounded transition-colors ${
+                isFirst
+                  ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              }`}
+            >
+              <ArrowUp className="w-3 h-3 stroke-[2.2]" />
+            </button>
+            <button
+              type="button"
+              disabled={isLast}
+              onClick={() => onMoveChapter("DOWN")}
+              title="Shift Chapter Down"
+              className={`p-1 rounded transition-colors ${
+                isLast
+                  ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              }`}
+            >
+              <ArrowDown className="w-3 h-3 stroke-[2.2]" />
+            </button>
+          </div>
+
+          {/* Smart "+ Add" Dropdown Menu */}
+          <div className="relative" ref={addMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowAddMenu(!showAddMenu)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-500/25 border border-sky-200/80 dark:border-sky-500/30 transition-all cursor-pointer shadow-2xs"
+            >
+              <Plus className="w-3 h-3 stroke-[3]" />
+              <span>Add</span>
+              <ChevronDown className="w-3 h-3 text-sky-500" />
+            </button>
+
+            {showAddMenu && (
+              <div className="absolute right-0 top-full mt-1.5 w-64 bg-white dark:bg-[#0D1527] border border-slate-200 dark:border-sky-500/30 rounded-2xl shadow-xl z-50 p-2 space-y-1 animate-fade-in">
+                <div className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  Select Content Type
+                </div>
+
+                {/* 1. Lecture Video */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddMenu(false);
+                    onAddLessonWithType("LECTURE_VIDEO");
+                  }}
+                  className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-sky-50 dark:hover:bg-sky-500/15 transition-colors group cursor-pointer"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+                    <PlayCircle className="w-4 h-4 stroke-[2]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-300">
+                      Lecture Video (Lec)
+                    </p>
+                    <p className="text-[10px] text-slate-400 truncate">Video link & reading notes</p>
+                  </div>
+                </button>
+
+                {/* 2. Practice Assignment Group */}
+                <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <div className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                    Practice Assignment
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMenu(false);
+                      onAddLessonWithType("PRACTICE_MCQ");
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors group cursor-pointer"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                      <FileQuestion className="w-4 h-4 stroke-[2]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-300">
+                        MCQ Quiz
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">Knowledge check practice</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMenu(false);
+                      onAddLessonWithType("PRACTICE_PROJECT");
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-amber-50 dark:hover:bg-amber-500/15 transition-colors group cursor-pointer"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                      <Code className="w-4 h-4 stroke-[2]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-300">
+                        Practice Project Lab
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">Ungraded hands-on challenge</p>
+                    </div>
+                  </button>
+                </div>
+
+                {/* 3. Test Assignment Group */}
+                <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <div className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                    Test Assignment (Evaluated)
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMenu(false);
+                      onAddLessonWithType("TEST_CODING");
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-indigo-50 dark:hover:bg-indigo-500/15 transition-colors group cursor-pointer"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                      <Code2 className="w-4 h-4 stroke-[2]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
+                        Coding Assessment
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">Auto-executed test cases</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMenu(false);
+                      onAddLessonWithType("TEST_VIVA");
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-purple-50 dark:hover:bg-purple-500/15 transition-colors group cursor-pointer"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                      <Video className="w-4 h-4 stroke-[2]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-300">
+                        Video Viva Walkthrough
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">Screen recording demo link</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMenu(false);
+                      onAddLessonWithType("TEST_SUBJECTIVE");
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-rose-50 dark:hover:bg-rose-500/15 transition-colors group cursor-pointer"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                      <BookOpen className="w-4 h-4 stroke-[2]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-300">
+                        Subjective Architecture
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">Rubric-graded rationale</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMenu(false);
+                      onAddLessonWithType("TEST_PROJECT");
+                    }}
+                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-left hover:bg-emerald-50 dark:hover:bg-emerald-500/15 transition-colors group cursor-pointer"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <Award className="w-4 h-4 stroke-[2]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-300">
+                        Capstone Project
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">Evaluated repo & deployment</p>
+                    </div>
+                  </button>
+                </div>
+
+                {/* 4. Custom Title Option */}
+                <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMenu(false);
+                      setShowCustomInput(true);
+                    }}
+                    className="w-full text-left px-2 py-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
+                  >
+                    + Custom Lesson Title...
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Delete Chapter Button */}
+          <button
+            type="button"
+            onClick={onDeleteChapter}
+            title="Delete this chapter"
+            className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5 stroke-[2]" />
+          </button>
+        </div>
       </div>
 
       {!collapsed && (
         <div className="p-2 space-y-1">
           {/* Lessons List */}
           {moduleLessons.length === 0 ? (
-            <div className="py-3 px-2 text-[11px] text-slate-400 text-center">
-              No lessons yet. Click + Lesson to add.
+            <div className="py-4 px-2 text-[11px] text-slate-400 text-center space-y-1">
+              <p>No content in this chapter yet.</p>
+              <p className="text-[10px] text-sky-600 dark:text-sky-400 font-medium">
+                Click "+ Add" above to add a Lecture, Practice, or Test.
+              </p>
             </div>
           ) : (
-            moduleLessons.map((les: any) => {
+            moduleLessons.map((les: any, lIdx: number) => {
               const isSelected = activeLessonId === les.lessonId;
               const badge = getLessonBadge(les);
               const displayTitle = les.title && les.title.trim().length > 0 ? les.title : les.lessonId;
+              const isFirstLesson = lIdx === 0;
+              const isLastLesson = lIdx === moduleLessons.length - 1;
+
               return (
-                <button
+                <div
                   key={les.lessonId}
-                  onClick={() => onSelectLesson(les.lessonId)}
-                  className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between gap-2 cursor-pointer ${
+                  className={`group/item w-full rounded-xl transition-all flex items-center justify-between gap-1.5 p-2 ${
                     isSelected
                       ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold border border-sky-500/30 shadow-2xs"
                       : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   }`}
                 >
-                  <span className="text-xs font-semibold truncate flex-1">
-                    {displayTitle}
-                  </span>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {/* Click to edit lesson */}
+                  <button
+                    type="button"
+                    onClick={() => onSelectLesson(les.lessonId)}
+                    className="flex-1 text-left min-w-0 flex items-center gap-2 cursor-pointer"
+                  >
+                    <span className="text-xs font-semibold truncate flex-1">
+                      {displayTitle}
+                    </span>
                     <span
-                      className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded-full ${badge.bg}`}
+                      className={`text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-full shrink-0 ${badge.bg}`}
                     >
                       {badge.label}
                     </span>
+                  </button>
+
+                  {/* Shifting & Moving Action Controls (visible on hover / active) */}
+                  <div className="flex items-center gap-0.5 shrink-0 opacity-80 group-hover/item:opacity-100 transition-opacity">
+                    {/* Shift Up */}
+                    <button
+                      type="button"
+                      disabled={isFirstLesson}
+                      onClick={(e) => handleMoveLesson(e, lIdx, "UP")}
+                      title="Move Up"
+                      className={`p-1 rounded transition-colors ${
+                        isFirstLesson
+                          ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
+                          : "text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                      }`}
+                    >
+                      <ArrowUp className="w-3 h-3 stroke-[2.2]" />
+                    </button>
+
+                    {/* Shift Down */}
+                    <button
+                      type="button"
+                      disabled={isLastLesson}
+                      onClick={(e) => handleMoveLesson(e, lIdx, "DOWN")}
+                      title="Move Down"
+                      className={`p-1 rounded transition-colors ${
+                        isLastLesson
+                          ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
+                          : "text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
+                      }`}
+                    >
+                      <ArrowDown className="w-3 h-3 stroke-[2.2]" />
+                    </button>
+
+                    {/* Move to another Chapter (if other modules exist) */}
+                    {otherModules.length > 0 && (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMovingLessonId(movingLessonId === les.lessonId ? null : les.lessonId);
+                          }}
+                          title="Move to another chapter"
+                          className="p-1 rounded text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                        >
+                          <FolderInput className="w-3 h-3 stroke-[2]" />
+                        </button>
+
+                        {movingLessonId === les.lessonId && (
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#0B1120] border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 p-1.5 space-y-1 animate-fade-in">
+                            <p className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                              Move to chapter:
+                            </p>
+                            {otherModules.map((om: any, omIdx: number) => (
+                              <button
+                                key={om.moduleId}
+                                type="button"
+                                onClick={(e) => handleMoveToModule(e, les.lessonId, om.moduleId)}
+                                className="w-full text-left px-2 py-1 text-xs font-semibold rounded-lg hover:bg-sky-50 dark:hover:bg-sky-500/20 text-slate-700 dark:text-slate-200 truncate cursor-pointer"
+                              >
+                                Chapter {omIdx + 1}: {om.title || "Module"}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Delete Lesson */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteLesson(e, les.lessonId)}
+                      title="Remove lesson"
+                      className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3 stroke-[2]" />
+                    </button>
                   </div>
-                </button>
+                </div>
               );
             })
           )}
 
-          {/* Inline Add Lesson Input */}
-          {addingLessonForModuleId === moduleId && (
+          {/* Inline Custom Lesson Title Input */}
+          {showCustomInput && (
             <div className="p-2.5 bg-slate-50 dark:bg-[#070A11] rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 mt-1">
               <input
                 type="text"
                 autoFocus
                 placeholder="Lesson title..."
-                value={newLessonTitle}
-                onChange={(e) => setNewLessonTitle(e.target.value)}
+                value={customLessonTitle}
+                onChange={(e) => setCustomLessonTitle(e.target.value)}
                 className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B1120] focus:outline-none focus:ring-2 focus:ring-sky-500/40"
               />
               <div className="flex justify-end gap-1.5">
                 <button
-                  onClick={() => setAddingLessonForModuleId(null)}
+                  type="button"
+                  onClick={() => setShowCustomInput(false)}
                   className="px-2.5 py-1 text-xs text-slate-500 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => onAddLesson(moduleId)}
+                  type="button"
+                  onClick={() => {
+                    if (customLessonTitle.trim()) {
+                      onAddLessonWithType("CUSTOM", customLessonTitle.trim());
+                      setCustomLessonTitle("");
+                      setShowCustomInput(false);
+                    }
+                  }}
                   className="px-3 py-1 text-xs font-bold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-lg shadow-xs cursor-pointer"
                 >
                   Create

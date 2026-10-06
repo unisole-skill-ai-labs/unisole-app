@@ -336,6 +336,17 @@ export const apiSlice = createApi({
         { type: "AdminModules", id: `${courseId}-modules` },
       ],
     }),
+    reorderAdminCourseModules: builder.mutation({
+      query: ({ courseId, moduleIds }) => ({
+        url: `/api/admin/courses/${courseId}/reorder-modules`,
+        method: "POST",
+        body: { moduleIds },
+      }),
+      invalidatesTags: (_res, _err, { courseId }) => [
+        "AdminCourses",
+        { type: "AdminModules", id: `${courseId}-modules` },
+      ],
+    }),
 
     // Modules
     getAdminModules: builder.query({
@@ -381,6 +392,29 @@ export const apiSlice = createApi({
       invalidatesTags: (_res, _err, { moduleId }) => [
         "AdminModules",
         { type: "AdminLessons", id: `${moduleId}-lessons` },
+      ],
+    }),
+    reorderAdminModuleLessons: builder.mutation({
+      query: ({ moduleId, lessonIds }) => ({
+        url: `/api/admin/modules/${moduleId}/reorder-lessons`,
+        method: "POST",
+        body: { lessonIds },
+      }),
+      invalidatesTags: (_res, _err, { moduleId }) => [
+        "AdminModules",
+        { type: "AdminLessons", id: `${moduleId}-lessons` },
+      ],
+    }),
+    moveAdminModuleLesson: builder.mutation({
+      query: ({ sourceModuleId, targetModuleId, lessonId, targetPosition }) => ({
+        url: `/api/admin/modules/${sourceModuleId}/move-lesson`,
+        method: "POST",
+        body: { targetModuleId, lessonId, targetPosition },
+      }),
+      invalidatesTags: (_res, _err, { sourceModuleId, targetModuleId }) => [
+        "AdminModules",
+        { type: "AdminLessons", id: `${sourceModuleId}-lessons` },
+        { type: "AdminLessons", id: `${targetModuleId}-lessons` },
       ],
     }),
 
@@ -529,12 +563,15 @@ export const {
   useAttachAdminCourseModuleMutation,
   useDetachAdminCourseModuleMutation,
   useClearAdminCourseModulesMutation,
+  useReorderAdminCourseModulesMutation,
   useGetAdminModulesQuery,
   useCreateAdminModuleMutation,
   useUpdateAdminModuleMutation,
   useGetAdminModuleLessonsQuery,
   useAttachAdminModuleLessonMutation,
   useDetachAdminModuleLessonMutation,
+  useReorderAdminModuleLessonsMutation,
+  useMoveAdminModuleLessonMutation,
   useGetAdminLessonsQuery,
   useGetAdminLessonByIdQuery,
   useCreateAdminLessonMutation,
