@@ -128,7 +128,7 @@ export default function MentorCockpitView({
         <div className="bg-gradient-to-r from-sky-500/10 via-indigo-500/5 to-transparent border border-sky-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center font-bold text-sky-600 dark:text-sky-300 text-sm overflow-hidden shrink-0">
-              {mentor.avatar ? (
+              {mentor.avatar && !mentor.avatar.includes("unsplash") ? (
                 <img src={mentor.avatar} alt={mentor.name} className="w-full h-full object-cover" />
               ) : (
                 mentor.name?.charAt(0) || "M"
@@ -241,11 +241,24 @@ export default function MentorCockpitView({
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <img
-                        src={mentee.avatar}
-                        alt={mentee.name}
-                        className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
-                      />
+                      {mentee.avatar && !mentee.avatar.includes("unsplash") ? (
+                        <img
+                          src={mentee.avatar}
+                          alt={mentee.name}
+                          className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500/15 to-indigo-500/15 border border-sky-500/25 flex items-center justify-center font-bold text-sky-600 dark:text-sky-300 text-xs shrink-0 select-none">
+                          {mentee.name
+                            ? mentee.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .slice(0, 2)
+                                .join("")
+                                .toUpperCase()
+                            : "U"}
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
                           <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
@@ -301,11 +314,24 @@ export default function MentorCockpitView({
                 {/* Mentee Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800/80">
                   <div className="flex items-center gap-3.5">
-                    <img
-                      src={selectedMentee.avatar}
-                      alt={selectedMentee.name}
-                      className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700"
-                    />
+                    {selectedMentee.avatar && !selectedMentee.avatar.includes("unsplash") ? (
+                      <img
+                        src={selectedMentee.avatar}
+                        alt={selectedMentee.name}
+                        className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-500/15 to-indigo-500/15 border border-sky-500/25 flex items-center justify-center font-bold text-sky-600 dark:text-sky-300 text-sm shrink-0 select-none">
+                        {selectedMentee.name
+                          ? selectedMentee.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .slice(0, 2)
+                              .join("")
+                              .toUpperCase()
+                          : "U"}
+                      </div>
+                    )}
                     <div>
                       <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                         {selectedMentee.name}
