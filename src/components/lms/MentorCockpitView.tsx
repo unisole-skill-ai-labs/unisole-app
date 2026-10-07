@@ -123,36 +123,6 @@ export default function MentorCockpitView({
 
   return (
     <div className="space-y-6 animate-fade-in font-sans">
-      {/* Mentor Profile Banner */}
-      {mentor && (
-        <div className="bg-gradient-to-r from-sky-500/10 via-indigo-500/5 to-transparent border border-sky-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center font-bold text-sky-600 dark:text-sky-300 text-sm overflow-hidden shrink-0">
-              {mentor.avatar && !mentor.avatar.includes("unsplash") ? (
-                <img src={mentor.avatar} alt={mentor.name} className="w-full h-full object-cover" />
-              ) : (
-                mentor.name?.charAt(0) || "M"
-              )}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                  {mentor.name || "Mentor Dashboard"}
-                </h4>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-300 border border-sky-500/20">
-                  {mentor.id === "ALL" ? "Full Cohort" : "Assigned Mentor"}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                {mentor.specialization || "Technical Mentor & Evaluator"} {mentor.email ? `• ${mentor.email}` : ""}
-              </p>
-            </div>
-          </div>
-          <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-slate-900/70 px-3.5 py-1.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 shadow-2xs">
-            <span className="text-sky-500 font-bold">{mentees.length}</span> Active Mentees in View
-          </div>
-        </div>
-      )}
 
       {/* Slim Inline Metrics Strip */}
       <div className="bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-3 sm:p-3.5 flex items-center justify-around divide-x divide-slate-100 dark:divide-slate-800/80 shadow-2xs overflow-x-auto gap-2">
@@ -266,10 +236,10 @@ export default function MentorCockpitView({
                             }`}
                           >
                             {mentee.status === "NEEDS_REVIEW"
-                              ? "Needs Attention"
+                              ? "NEEDS REVIEW"
                               : mentee.status === "AT_RISK"
-                              ? "Needs Check-in"
-                              : "Active"}
+                              ? "AT RISK"
+                              : "ON TRACK"}
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">

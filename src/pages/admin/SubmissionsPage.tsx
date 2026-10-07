@@ -85,21 +85,8 @@ export default function SubmissionsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
             <Award className="w-5 h-5 text-sky-500" />
-            <span>
-              {isMentor
-                ? "Mentor View"
-                : isProgramManager
-                ? "Mentor View — Cohort Oversight"
-                : "Mentor View & Evaluations"}
-            </span>
+            <span>Mentor View</span>
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {isMentor
-              ? "Track student learning progress, evaluate coding & project deliverables, and guide your assigned batch."
-              : isProgramManager
-              ? "Program Manager view: Monitor cohort milestones and review student deliverables submitted across mentors."
-              : "Platform view: Track student milestones, evaluate deliverables, and audit submitted assessments."}
-          </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -107,13 +94,14 @@ export default function SubmissionsPage() {
           {(isProgramManager || isAdmin) && (
             <div className="flex items-center gap-2 bg-white dark:bg-[#0B1120] px-3.5 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 text-xs shadow-2xs">
               <User className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-              <span className="text-slate-400 font-medium">Cohort Mentor:</span>
               <select
                 value={selectedMentorId}
                 onChange={(e) => setSelectedMentorId(e.target.value)}
                 className="bg-transparent text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
               >
-                <option value="ALL">All Mentors (Full Cohort)</option>
+                <option value="ALL">
+                  All Mentors ({mentorCockpitData?.mentees?.length || 0} Mentees)
+                </option>
                 {mentors.map((m: any) => (
                   <option key={m.id} value={m.id}>
                     {m.name} ({m.activeMenteesCount || 0} Mentees)
