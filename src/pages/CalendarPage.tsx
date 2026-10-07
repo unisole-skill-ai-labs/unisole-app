@@ -31,8 +31,9 @@ import {
   useGetAdminStudentsQuery,
 } from "../store/apiSlice";
 
+const START_HOUR = 9;
+const SLOT_HEIGHT_PX = 44;
 const HOURS = [
-  "8 AM",
   "9 AM",
   "10 AM",
   "11 AM",
@@ -243,9 +244,9 @@ export default function CalendarPage() {
   const now = new Date();
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
-  const isCurrentTimeInRange = currentHour >= 8 && currentHour <= 19;
+  const isCurrentTimeInRange = currentHour >= START_HOUR && currentHour <= 19;
   const currentTimeTopPercent = isCurrentTimeInRange
-    ? ((currentHour - 8 + currentMinute / 60) / 12) * 100
+    ? ((currentHour - START_HOUR + currentMinute / 60) / HOURS.length) * 100
     : null;
 
   return (
@@ -429,8 +430,8 @@ export default function CalendarPage() {
             })}
           </div>
 
-          {/* Time Grid with Events */}
-          <div className="relative overflow-y-auto max-h-[640px] scrollbar-thin">
+          {/* Time Grid with Events (Compact Fit) */}
+          <div className="relative overflow-hidden">
             {/* Realtime dotted line indicator */}
             {isCurrentTimeInRange && currentTimeTopPercent !== null && (
               <div
@@ -444,9 +445,9 @@ export default function CalendarPage() {
 
             <div className="grid grid-cols-8 divide-x divide-slate-100 dark:divide-slate-800/80">
               {/* Left Column: Hours */}
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/80 text-[11px] font-medium text-slate-400 text-right pr-3 bg-slate-50/20 dark:bg-[#070A11]/30">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/80 text-[11px] font-medium text-slate-400 text-right pr-2.5 bg-slate-50/20 dark:bg-[#070A11]/30">
                 {HOURS.map((hour, hIdx) => (
-                  <div key={hIdx} className="h-16 flex items-start justify-end pt-1">
+                  <div key={hIdx} className="h-[44px] flex items-start justify-end pt-1">
                     {hour}
                   </div>
                 ))}
@@ -466,7 +467,7 @@ export default function CalendarPage() {
                 return (
                   <div
                     key={dayIdx}
-                    className="relative divide-y divide-slate-100/80 dark:divide-slate-800/60 min-h-[768px]"
+                    className="relative divide-y divide-slate-100/80 dark:divide-slate-800/60 min-h-[484px]"
                   >
                     {/* Hour Slot Grid Background */}
                     {HOURS.map((_, slotIdx) => (
@@ -475,7 +476,7 @@ export default function CalendarPage() {
                         onClick={() => {
                           if (canManageEvents) {
                             setNewDate(dayDateStr);
-                            const slotHour = slotIdx + 8;
+                            const slotHour = slotIdx + START_HOUR;
                             const hh = slotHour < 10 ? `0${slotHour}` : `${slotHour}`;
                             setNewStartTime(`${hh}:00`);
                             const endH = slotHour + 1 < 10 ? `0${slotHour + 1}` : `${slotHour + 1}`;
@@ -483,7 +484,7 @@ export default function CalendarPage() {
                             setIsAddModalOpen(true);
                           }
                         }}
-                        className="h-16 hover:bg-slate-50/40 dark:hover:bg-slate-800/20 transition-colors cursor-pointer"
+                        className="h-[44px] hover:bg-slate-50/40 dark:hover:bg-slate-800/20 transition-colors cursor-pointer"
                       />
                     ))}
 
@@ -495,8 +496,8 @@ export default function CalendarPage() {
                       const endH = endDate.getHours() + endDate.getMinutes() / 60;
                       const duration = Math.max(0.5, endH - startH);
 
-                      const topOffset = Math.max(0, (startH - 8) * 64);
-                      const height = Math.max(36, duration * 64 - 4);
+                      const topOffset = Math.max(0, (startH - START_HOUR) * SLOT_HEIGHT_PX);
+                      const height = Math.max(34, duration * SLOT_HEIGHT_PX - 3);
 
                       const color = COLOR_CLASSES[ev.colorScheme || "blue"] || COLOR_CLASSES.blue;
 
@@ -513,10 +514,10 @@ export default function CalendarPage() {
                             top: `${topOffset}px`,
                             height: `${height}px`,
                           }}
-                          className={`absolute left-1 right-1 rounded-xl p-2 sm:p-2.5 border transition-all hover:scale-[1.01] hover:shadow-xs z-10 flex flex-col justify-between cursor-pointer overflow-hidden ${color.bg} ${color.border} ${color.text}`}
+                          className={`absolute left-1 right-1 rounded-lg p-1.5 sm:p-2 border transition-all hover:scale-[1.01] hover:shadow-xs z-10 flex flex-col justify-between cursor-pointer overflow-hidden shadow-2xs ${color.bg} ${color.border} ${color.text}`}
                         >
                           <div className="flex items-start justify-between gap-1">
-                            <h4 className="text-xs font-bold truncate leading-tight">
+                            <h4 className="text-[11px] sm:text-xs font-bold truncate leading-tight">
                               {ev.title}
                             </h4>
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${color.dot}`} />
