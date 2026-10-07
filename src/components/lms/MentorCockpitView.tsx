@@ -62,7 +62,6 @@ export default function MentorCockpitView({
 }: MentorCockpitProps) {
   const [selectedMentee, setSelectedMentee] = useState<Mentee | null>(null);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
-  const [gradeScore, setGradeScore] = useState<number>(85);
   const [mentorFeedback, setMentorFeedback] = useState<string>("");
   const [submittedFeedbackSuccess, setSubmittedFeedbackSuccess] = useState<boolean>(false);
 
@@ -105,10 +104,8 @@ export default function MentorCockpitView({
 
   useEffect(() => {
     if (activeSubmission) {
-      setGradeScore(activeSubmission.score || 85);
       setMentorFeedback(activeSubmission.mentorFeedback || "");
     } else {
-      setGradeScore(85);
       setMentorFeedback("");
     }
   }, [activeSubmission]);
@@ -116,7 +113,7 @@ export default function MentorCockpitView({
   const handleGradeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (onGradeSubmission && selectedMentee && activeSubmission) {
-      onGradeSubmission(selectedMentee.id, activeSubmission.id, gradeScore, mentorFeedback);
+      onGradeSubmission(selectedMentee.id, activeSubmission.id, 100, mentorFeedback);
       setSubmittedFeedbackSuccess(true);
       setTimeout(() => setSubmittedFeedbackSuccess(false), 3000);
     }
@@ -353,7 +350,7 @@ export default function MentorCockpitView({
                                   : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
                               }`}
                             >
-                              {isPending ? "Pending" : `${sub.score ?? 85}/100`}
+                              {isPending ? "Pending" : "Evaluated"}
                             </span>
                           </button>
                         );
@@ -385,11 +382,6 @@ export default function MentorCockpitView({
                         <CheckCircle2 className="w-4 h-4 text-emerald-500 stroke-[2.5]" />
                         <span>Submission Status: {activeSubmission.status || "COMPLETED"}</span>
                       </span>
-                      {activeSubmission.score !== null && activeSubmission.score !== undefined && (
-                        <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          Score: {activeSubmission.score}/100
-                        </span>
-                      )}
                     </div>
 
                     {/* Student Quiz Answers (for MCQs) */}
@@ -446,25 +438,6 @@ export default function MentorCockpitView({
                       !activeSubmission.title?.toLowerCase().includes("quiz") &&
                       !activeSubmission.submissionText?.includes("Question") && (
                         <form onSubmit={handleGradeSubmit} className="space-y-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <label className="text-xs font-bold text-slate-900 dark:text-white">
-                              Score
-                            </label>
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="range"
-                                min={0}
-                                max={100}
-                                value={gradeScore}
-                                onChange={(e) => setGradeScore(Number(e.target.value))}
-                                className="w-44 accent-sky-500"
-                              />
-                              <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
-                                {gradeScore} / 100
-                              </span>
-                            </div>
-                          </div>
-
                           <div>
                             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                               Feedback & Notes
