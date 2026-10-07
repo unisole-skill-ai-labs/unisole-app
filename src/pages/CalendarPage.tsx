@@ -109,7 +109,7 @@ export default function CalendarPage() {
   const canManageEvents = isAdmin || isProgramManager || isMentor;
 
   // View & Filter States
-  const [activeFilter, setActiveFilter] = useState<"ALL" | "MILESTONE" | "LIVE_CLASS" | "VIVA_1ON1">("ALL");
+  const [activeFilter, setActiveFilter] = useState<"ALL" | "LIVE_CLASS" | "MILESTONE" | "DEADLINE" | "VIVA_1ON1">("ALL");
   const [viewMode, setViewMode] = useState<"week" | "month" | "day">("month");
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [search, setSearch] = useState("");
@@ -134,10 +134,38 @@ export default function CalendarPage() {
   const [newColorScheme, setNewColorScheme] = useState("blue");
 
   // RTK Query
-  const { data: events = [], isLoading } = useGetCalendarEventsQuery({
-    eventType: activeFilter !== "ALL" ? activeFilter : undefined,
-    search: search ? search : undefined,
-  });
+  const { data: rawEvents = [], isLoading } = useGetCalendarEventsQuery({});
+
+  // Dynamic Event Counts
+  const eventCounts = useMemo(() => {
+    const list = Array.isArray(rawEvents) ? rawEvents : [];
+    return {
+      ALL: list.length,
+      LIVE_CLASS: list.filter((e: any) => e.eventType === "LIVE_CLASS").length,
+      MILESTONE: list.filter((e: any) => e.eventType === "MILESTONE").length,
+      DEADLINE: list.filter((e: any) => e.eventType === "DEADLINE").length,
+      VIVA_1ON1: list.filter((e: any) => e.eventType === "VIVA_1ON1").length,
+    };
+  }, [rawEvents]);
+
+  // Reactive Filtered Events
+  const events = useMemo(() => {
+    let list = Array.isArray(rawEvents) ? [...rawEvents] : [];
+    if (activeFilter !== "ALL") {
+      list = list.filter((e: any) => e.eventType === activeFilter);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (e: any) =>
+          (e.title && String(e.title).toLowerCase().includes(q)) ||
+          (e.description && String(e.description).toLowerCase().includes(q)) ||
+          (e.mentorName && String(e.mentorName).toLowerCase().includes(q)) ||
+          (e.courseTitle && String(e.courseTitle).toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [rawEvents, activeFilter, search]);
 
   const [createCalendarEventApi, { isLoading: isCreating }] = useCreateCalendarEventMutation();
   const [deleteCalendarEventApi, { isLoading: isDeleting }] = useDeleteCalendarEventMutation();
@@ -326,46 +354,104 @@ export default function CalendarPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-slate-100 dark:border-slate-800/80">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-100 dark:border-slate-800/80 scrollbar-none">
         <button
+          type="button"
           onClick={() => setActiveFilter("ALL")}
-          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-xl transition-all cursor-pointer font-bold ${
             activeFilter === "ALL"
-              ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+              ? "bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
           }`}
         >
-          All events
+          <span>All Events</span>
+          <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+            activeFilter === "ALL"
+              ? "bg-white/20 text-white dark:bg-slate-950/20 dark:text-slate-950"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+          }`}>
+            {eventCounts.ALL}
+          </span>
         </button>
+
         <button
-          onClick={() => setActiveFilter("MILESTONE")}
-          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-            activeFilter === "MILESTONE"
-              ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
-          }`}
-        >
-          Course Milestones
-        </button>
-        <button
+          type="button"
           onClick={() => setActiveFilter("LIVE_CLASS")}
-          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-xl transition-all cursor-pointer font-bold ${
             activeFilter === "LIVE_CLASS"
-              ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+              ? "bg-sky-500 text-white shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
           }`}
         >
-          Live Sessions
+          <span className="w-2 h-2 rounded-full bg-sky-400" />
+          <span>Live Classes</span>
+          <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+            activeFilter === "LIVE_CLASS"
+              ? "bg-white/20 text-white"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+          }`}>
+            {eventCounts.LIVE_CLASS}
+          </span>
         </button>
+
         <button
-          onClick={() => setActiveFilter("VIVA_1ON1")}
-          className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-            activeFilter === "VIVA_1ON1"
-              ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold"
-              : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+          type="button"
+          onClick={() => setActiveFilter("MILESTONE")}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-xl transition-all cursor-pointer font-bold ${
+            activeFilter === "MILESTONE"
+              ? "bg-emerald-600 text-white shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
           }`}
         >
-          1-on-1 Reviews
+          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span>Quizzes & Milestones</span>
+          <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+            activeFilter === "MILESTONE"
+              ? "bg-white/20 text-white"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+          }`}>
+            {eventCounts.MILESTONE}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveFilter("DEADLINE")}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-xl transition-all cursor-pointer font-bold ${
+            activeFilter === "DEADLINE"
+              ? "bg-purple-600 text-white shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-purple-400" />
+          <span>Lab Deliverables</span>
+          <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+            activeFilter === "DEADLINE"
+              ? "bg-white/20 text-white"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+          }`}>
+            {eventCounts.DEADLINE}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveFilter("VIVA_1ON1")}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs rounded-xl transition-all cursor-pointer font-bold ${
+            activeFilter === "VIVA_1ON1"
+              ? "bg-rose-500 text-white shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-rose-400" />
+          <span>1-on-1 Mentorship</span>
+          <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+            activeFilter === "VIVA_1ON1"
+              ? "bg-white/20 text-white"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+          }`}>
+            {eventCounts.VIVA_1ON1}
+          </span>
         </button>
       </div>
 
