@@ -764,7 +764,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* Event Details Modal */}
+      {/* Event Details Floating Popover Card (No background dimming) */}
       {selectedEvent && (() => {
         const isCustomEvent = selectedEvent.id && !String(selectedEvent.id).startsWith("ev_");
         const badge = (() => {
@@ -783,131 +783,140 @@ export default function CalendarPage() {
         })();
 
         return (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-[#0B1120] rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5 animate-scale-in">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80">
-                <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border ${badge.cls}`}>
-                  {badge.label}
-                </span>
-                <button
-                  onClick={() => setSelectedEvent(null)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  title="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+          <>
+            {/* Transparent click-outside overlay — ZERO greying or blurring */}
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setSelectedEvent(null)}
+            />
 
-              {/* Title & Description */}
-              <div className="space-y-1.5">
-                <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
-                  {selectedEvent.title}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
-                  {selectedEvent.description || "Curriculum milestone & scheduled learning session."}
-                </p>
-              </div>
-
-              {/* Info Tiles */}
-              <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-[#070A11]/60 border border-slate-200/80 dark:border-slate-800/80 space-y-2.5 text-xs">
-                <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
-                  <Clock className="w-4 h-4 text-sky-500 shrink-0" />
-                  <span className="font-medium">
-                    {new Date(selectedEvent.startTime).toLocaleString([], {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}{" "}
-                    –{" "}
-                    {new Date(selectedEvent.endTime).toLocaleTimeString([], {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
+            {/* Floating Popover Card */}
+            <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center p-4">
+              <div className="pointer-events-auto bg-white dark:bg-[#0B1120] rounded-2xl max-w-lg w-full p-6 border border-slate-200/90 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] ring-1 ring-slate-900/5 dark:ring-slate-700/50 space-y-4 animate-scale-in">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80">
+                  <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border ${badge.cls}`}>
+                    {badge.label}
                   </span>
+                  <button
+                    onClick={() => setSelectedEvent(null)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    title="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
 
-                {selectedEvent.mentorName && (
+                {/* Title & Description */}
+                <div className="space-y-1">
+                  <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    {selectedEvent.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
+                    {selectedEvent.description || "Curriculum milestone & scheduled learning session."}
+                  </p>
+                </div>
+
+                {/* Info Tiles */}
+                <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-[#070A11]/60 border border-slate-200/80 dark:border-slate-800/80 space-y-2 text-xs">
                   <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
-                    <Users className="w-4 h-4 text-rose-500 shrink-0" />
-                    <span>
-                      Mentor: <strong className="text-slate-900 dark:text-white font-semibold">{selectedEvent.mentorName}</strong>
+                    <Clock className="w-4 h-4 text-sky-500 shrink-0" />
+                    <span className="font-medium">
+                      {new Date(selectedEvent.startTime).toLocaleString([], {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}{" "}
+                      –{" "}
+                      {new Date(selectedEvent.endTime).toLocaleTimeString([], {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
                     </span>
                   </div>
-                )}
 
-                {selectedEvent.courseTitle && (
-                  <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
-                    <BookOpen className="w-4 h-4 text-indigo-500 shrink-0" />
-                    <span>
-                      Course: <strong className="text-slate-900 dark:text-white font-semibold">{selectedEvent.courseTitle}</strong>
-                    </span>
-                  </div>
-                )}
-
-                {selectedEvent.studentName && (
-                  <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
-                    <Users className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>
-                      Student: <strong className="text-slate-900 dark:text-white font-semibold">{selectedEvent.studentName}</strong>
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-1 gap-2">
-                {canManageEvents && isCustomEvent ? (
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteEvent(selectedEvent.id)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete</span>
-                  </button>
-                ) : <div />}
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedEvent(null)}
-                    className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    Close
-                  </button>
-
-                  {selectedEvent.meetUrl && (
-                    <a
-                      href={selectedEvent.meetUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold transition-all shadow-xs"
-                    >
-                      <Video className="w-3.5 h-3.5" />
-                      <span>Join Video Call</span>
-                    </a>
+                  {selectedEvent.mentorName && (
+                    <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
+                      <Users className="w-4 h-4 text-rose-500 shrink-0" />
+                      <span>
+                        Mentor: <strong className="text-slate-900 dark:text-white font-semibold">{selectedEvent.mentorName}</strong>
+                      </span>
+                    </div>
                   )}
 
-                  {selectedEvent.courseId && (
+                  {selectedEvent.courseTitle && (
+                    <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
+                      <BookOpen className="w-4 h-4 text-indigo-500 shrink-0" />
+                      <span>
+                        Course: <strong className="text-slate-900 dark:text-white font-semibold">{selectedEvent.courseTitle}</strong>
+                      </span>
+                    </div>
+                  )}
+
+                  {selectedEvent.studentName && (
+                    <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
+                      <Users className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <span>
+                        Student: <strong className="text-slate-900 dark:text-white font-semibold">{selectedEvent.studentName}</strong>
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between pt-1 gap-2">
+                  {canManageEvents && isCustomEvent ? (
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectedEvent(null);
-                        navigate(`/player/${selectedEvent.courseId}`);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 text-xs font-bold transition-all hover:opacity-90 shadow-xs cursor-pointer"
+                      onClick={() => handleDeleteEvent(selectedEvent.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open in LMS</span>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
                     </button>
-                  )}
+                  ) : <div />}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEvent(null)}
+                      className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      Close
+                    </button>
+
+                    {selectedEvent.meetUrl && (
+                      <a
+                        href={selectedEvent.meetUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold transition-all shadow-xs"
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                        <span>Join Video Call</span>
+                      </a>
+                    )}
+
+                    {selectedEvent.courseId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedEvent(null);
+                          navigate(`/player/${selectedEvent.courseId}`);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 text-xs font-bold transition-all hover:opacity-90 shadow-xs cursor-pointer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Open in LMS</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </>
         );
       })()}
 
