@@ -110,7 +110,7 @@ export default function CalendarPage() {
 
   // View & Filter States
   const [activeFilter, setActiveFilter] = useState<"ALL" | "MILESTONE" | "LIVE_CLASS" | "VIVA_1ON1">("ALL");
-  const [viewMode, setViewMode] = useState<"week" | "month" | "day">("week");
+  const [viewMode, setViewMode] = useState<"week" | "month" | "day">("month");
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [search, setSearch] = useState("");
 
@@ -165,6 +165,55 @@ export default function CalendarPage() {
     return days;
   }, [currentDate]);
 
+  // Calculate Month Grid (full 35/42 days matrix)
+  const monthGridDays = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    let startOffset = firstDay.getDay() - 1;
+    if (startOffset < 0) startOffset = 6;
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    const cells: { date: Date; dateStr: string; dayNum: number; isCurrentMonth: boolean }[] = [];
+
+    for (let i = startOffset - 1; i >= 0; i--) {
+      const d = new Date(year, month - 1, daysInPrevMonth - i);
+      cells.push({
+        date: d,
+        dateStr: d.toISOString().split("T")[0],
+        dayNum: d.getDate(),
+        isCurrentMonth: false,
+      });
+    }
+
+    for (let i = 1; i <= daysInMonth; i++) {
+      const d = new Date(year, month, i);
+      cells.push({
+        date: d,
+        dateStr: d.toISOString().split("T")[0],
+        dayNum: i,
+        isCurrentMonth: true,
+      });
+    }
+
+    const totalNeeded = cells.length > 35 ? 42 : 35;
+    const remaining = totalNeeded - cells.length;
+    for (let i = 1; i <= remaining; i++) {
+      const d = new Date(year, month + 1, i);
+      cells.push({
+        date: d,
+        dateStr: d.toISOString().split("T")[0],
+        dayNum: i,
+        isCurrentMonth: false,
+      });
+    }
+
+    return cells;
+  }, [currentDate]);
+
   // Current Month & Date range formatting
   const formattedMonth = useMemo(() => {
     return currentDate.toLocaleString("default", { month: "long", year: "numeric" });
@@ -178,7 +227,7 @@ export default function CalendarPage() {
     } else if (viewMode === "day") {
       return currentDate.toLocaleDateString("default", { weekday: "long", month: "short", day: "numeric", year: "numeric" });
     }
-    return formattedMonth;
+    return `${currentDate.toLocaleString("default", { month: "long" })} ${currentDate.getFullYear()}`;
   }, [viewMode, weekDays, currentDate, formattedMonth]);
 
   // Navigation handlers
@@ -537,42 +586,126 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* Month View Placeholder / Simple Grid */}
+      {/* Full Month Calendar View */}
       {viewMode === "month" && (
-        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] p-4 text-center">
-          <div className="grid grid-cols-7 gap-2">
-            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-              <div key={d} className="p-2 text-xs font-bold text-slate-400">
-                {d}
-              </div>
-            ))}
-            {weekDays.map((d, i) => (
+        <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0B1120] overflow-hidden shadow-2xs">
+          {/* Day Names Header */}
+          <div className="grid grid-cols-7 border-b border-slate-100 dark:border-slate-800/80 text-center bg-slate-50/50 dark:bg-[#070A11]/60">
+            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
               <div
-                key={i}
-                className="h-28 rounded-xl border border-slate-100 dark:border-slate-800 p-2 text-left space-y-1 overflow-hidden"
+                key={day}
+                className="py-2.5 text-xs font-bold text-slate-500 dark:text-slate-400 border-r border-slate-100 dark:border-slate-800/80 last:border-r-0 uppercase tracking-wider"
               >
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  {d.getDate()}
-                </span>
-                <div className="space-y-1">
-                  {(events || [])
-                    .filter(
-                      (e: any) =>
-                        new Date(e.startTime).toISOString().split("T")[0] ===
-                        d.toISOString().split("T")[0]
-                    )
-                    .map((e: any) => (
-                      <div
-                        key={e.id}
-                        onClick={() => setSelectedEvent(e)}
-                        className="p-1 rounded bg-sky-500/10 text-[10px] font-bold text-sky-600 dark:text-sky-300 truncate cursor-pointer"
-                      >
-                        {e.title}
-                      </div>
-                    ))}
-                </div>
+                {day}
               </div>
             ))}
+          </div>
+
+          {/* Month Days Matrix */}
+          <div className="grid grid-cols-7 divide-x divide-y divide-slate-100 dark:divide-slate-800/80 bg-slate-100/30 dark:bg-slate-900/20">
+            {monthGridDays.map((cell, idx) => {
+              const isToday =
+                cell.date.getDate() === now.getDate() &&
+                cell.date.getMonth() === now.getMonth() &&
+                cell.date.getFullYear() === now.getFullYear();
+
+              const dayEvents = (events || []).filter((ev: any) => {
+                if (!ev.startTime) return false;
+                const evDate = new Date(ev.startTime).toISOString().split("T")[0];
+                return evDate === cell.dateStr;
+              });
+
+              return (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    if (canManageEvents && dayEvents.length === 0) {
+                      setNewDate(cell.dateStr);
+                      setIsAddModalOpen(true);
+                    }
+                  }}
+                  className={`min-h-[108px] sm:min-h-[120px] p-2 flex flex-col justify-between transition-colors bg-white dark:bg-[#0B1120] group ${
+                    !cell.isCurrentMonth
+                      ? "opacity-35 bg-slate-50/50 dark:bg-[#070A11]/40"
+                      : "hover:bg-slate-50/50 dark:hover:bg-slate-800/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    {isToday ? (
+                      <span className="w-6 h-6 rounded-full bg-slate-950 dark:bg-white text-white dark:text-slate-950 text-xs font-extrabold flex items-center justify-center shadow-xs">
+                        {cell.dayNum}
+                      </span>
+                    ) : (
+                      <span
+                        className={`text-xs font-bold ${
+                          cell.isCurrentMonth
+                            ? "text-slate-700 dark:text-slate-300"
+                            : "text-slate-400 dark:text-slate-600"
+                        }`}
+                      >
+                        {cell.dayNum}
+                      </span>
+                    )}
+
+                    {canManageEvents && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setNewDate(cell.dateStr);
+                          setIsAddModalOpen(true);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-opacity cursor-pointer"
+                        title="Add event"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Day Events List */}
+                  <div className="space-y-1 mt-1.5 flex-1">
+                    {dayEvents.slice(0, 3).map((ev: any) => {
+                      const color = COLOR_CLASSES[ev.colorScheme || "blue"] || COLOR_CLASSES.blue;
+                      const startTimeStr = new Date(ev.startTime).toLocaleTimeString([], {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      });
+
+                      return (
+                        <div
+                          key={ev.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEvent(ev);
+                          }}
+                          className={`px-1.5 py-1 rounded-md border text-[11px] font-semibold truncate cursor-pointer transition-all hover:scale-[1.02] hover:shadow-2xs flex items-center gap-1.5 ${color.bg} ${color.border} ${color.text}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${color.dot}`} />
+                          <span className="truncate flex-1">{ev.title}</span>
+                          <span className="text-[9px] font-mono opacity-70 shrink-0 hidden sm:inline">
+                            {startTimeStr}
+                          </span>
+                        </div>
+                      );
+                    })}
+
+                    {dayEvents.length > 3 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentDate(cell.date);
+                          setViewMode("day");
+                        }}
+                        className="text-[10px] font-bold text-sky-600 dark:text-sky-400 pl-1 hover:underline cursor-pointer"
+                      >
+                        +{dayEvents.length - 3} more
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
