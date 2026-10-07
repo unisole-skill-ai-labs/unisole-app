@@ -154,54 +154,46 @@ export default function MentorCockpitView({
         </div>
       )}
 
-      {/* Top Diamond Milestones Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-2xl flex items-center gap-3.5 shadow-2xs">
-          <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-500 border border-sky-500/20 flex items-center justify-center shrink-0">
-            <span className="font-black text-sm tracking-wider">{milestones?.submitted ?? 0}</span>
-          </div>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-              Submissions
-            </span>
-            <span className="text-sm font-bold text-slate-900 dark:text-white">Total Attempted</span>
-          </div>
+      {/* Slim Inline Metrics Strip */}
+      <div className="bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-3 sm:p-3.5 flex items-center justify-around divide-x divide-slate-100 dark:divide-slate-800/80 shadow-2xs overflow-x-auto gap-2">
+        <div className="flex items-center gap-2.5 px-3 min-w-fit">
+          <span className="w-2 h-2 rounded-full bg-sky-500" />
+          <span className="text-xs font-bold text-slate-900 dark:text-white">
+            {milestones?.submitted ?? 0}
+          </span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Submissions
+          </span>
         </div>
 
-        <div className="bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-2xl flex items-center gap-3.5 shadow-2xs">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shrink-0">
-            <span className="font-black text-sm tracking-wider">{milestones?.evaluated ?? 0}</span>
-          </div>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-              Evaluated
-            </span>
-            <span className="text-sm font-bold text-slate-900 dark:text-white">Graded & Feedback</span>
-          </div>
+        <div className="flex items-center gap-2.5 px-3 min-w-fit">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="text-xs font-bold text-slate-900 dark:text-white">
+            {milestones?.evaluated ?? 0}
+          </span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Completed
+          </span>
         </div>
 
-        <div className="bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-2xl flex items-center gap-3.5 shadow-2xs">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center shrink-0">
-            <span className="font-black text-sm tracking-wider">{milestones?.pendingReview ?? 0}</span>
-          </div>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-              Pending Review
-            </span>
-            <span className="text-sm font-bold text-slate-900 dark:text-white">Awaiting Marks</span>
-          </div>
+        <div className="flex items-center gap-2.5 px-3 min-w-fit">
+          <span className="w-2 h-2 rounded-full bg-amber-500" />
+          <span className="text-xs font-bold text-slate-900 dark:text-white">
+            {milestones?.pendingReview ?? 0}
+          </span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Needs Attention
+          </span>
         </div>
 
-        <div className="bg-white dark:bg-[#0B1120] border border-slate-200/80 dark:border-slate-800/80 p-4 rounded-2xl flex items-center gap-3.5 shadow-2xs">
-          <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center shrink-0">
-            <span className="font-black text-sm tracking-wider">{milestones?.atRisk ?? 0}</span>
-          </div>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-              At Risk
-            </span>
-            <span className="text-sm font-bold text-slate-900 dark:text-white">Lagging Behind</span>
-          </div>
+        <div className="flex items-center gap-2.5 px-3 min-w-fit">
+          <span className="w-2 h-2 rounded-full bg-rose-500" />
+          <span className="text-xs font-bold text-slate-900 dark:text-white">
+            {milestones?.atRisk ?? 0}
+          </span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Needs Check-in
+          </span>
         </div>
       </div>
 
@@ -273,7 +265,11 @@ export default function MentorCockpitView({
                                 : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                             }`}
                           >
-                            {mentee.status.replace("_", " ")}
+                            {mentee.status === "NEEDS_REVIEW"
+                              ? "Needs Attention"
+                              : mentee.status === "AT_RISK"
+                              ? "Needs Check-in"
+                              : "Active"}
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
