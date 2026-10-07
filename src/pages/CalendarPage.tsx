@@ -723,133 +723,193 @@ export default function CalendarPage() {
                   new Date(e.startTime).toISOString().split("T")[0] ===
                   currentDate.toISOString().split("T")[0]
               )
-              .map((e: any) => (
-                <div
-                  key={e.id}
-                  onClick={() => setSelectedEvent(e)}
-                  className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                >
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                      {e.title}
-                    </h4>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      {new Date(e.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} –{" "}
-                      {new Date(e.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                    </p>
+              .map((e: any) => {
+                const badgeInfo = (() => {
+                  switch (e.eventType) {
+                    case "LIVE_CLASS":
+                      return { label: "Live Class", cls: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20" };
+                    case "VIVA_1ON1":
+                      return { label: "1-on-1 Sync", cls: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20" };
+                    case "MILESTONE":
+                      return { label: "Milestone", cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" };
+                    case "DEADLINE":
+                      return { label: "Deliverable Due", cls: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20" };
+                    default:
+                      return { label: "Event", cls: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20" };
+                  }
+                })();
+
+                return (
+                  <div
+                    key={e.id}
+                    onClick={() => setSelectedEvent(e)}
+                    className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                  >
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        {e.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        {new Date(e.startTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} –{" "}
+                        {new Date(e.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${badgeInfo.cls}`}>
+                      {badgeInfo.label}
+                    </span>
                   </div>
-                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400">
-                    {e.eventType}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
           </div>
         </div>
       )}
 
       {/* Event Details Modal */}
-      {selectedEvent && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B1120] rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-scale-in">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
-                {selectedEvent.eventType || "EVENT"}
-              </span>
-              <button
-                onClick={() => setSelectedEvent(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      {selectedEvent && (() => {
+        const isCustomEvent = selectedEvent.id && !String(selectedEvent.id).startsWith("ev_");
+        const badge = (() => {
+          switch (selectedEvent.eventType) {
+            case "LIVE_CLASS":
+              return { label: "Live Online Class", cls: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20" };
+            case "VIVA_1ON1":
+              return { label: "1-on-1 Mentorship Sync", cls: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20" };
+            case "MILESTONE":
+              return { label: "Quiz & Milestone", cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" };
+            case "DEADLINE":
+              return { label: "Deliverable Due", cls: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20" };
+            default:
+              return { label: selectedEvent.eventType?.replace(/_/g, " ") || "Event", cls: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20" };
+          }
+        })();
 
-            <div className="space-y-2">
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                {selectedEvent.title}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                {selectedEvent.description || "Curriculum milestone & scheduled learning session."}
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#070A11] border border-slate-200/80 dark:border-slate-800 space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                <Clock className="w-3.5 h-3.5 text-sky-500" />
-                <span>
-                  {new Date(selectedEvent.startTime).toLocaleString([], {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}{" "}
-                  –{" "}
-                  {new Date(selectedEvent.endTime).toLocaleTimeString([], {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-[#0B1120] rounded-2xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5 animate-scale-in">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80">
+                <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border ${badge.cls}`}>
+                  {badge.label}
                 </span>
+                <button
+                  onClick={() => setSelectedEvent(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {selectedEvent.courseTitle && (
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
-                  <span>{selectedEvent.courseTitle}</span>
+              {/* Title & Description */}
+              <div className="space-y-1.5">
+                <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
+                  {selectedEvent.title}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
+                  {selectedEvent.description || "Curriculum milestone & scheduled learning session."}
+                </p>
+              </div>
+
+              {/* Info Tiles */}
+              <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-[#070A11]/60 border border-slate-200/80 dark:border-slate-800/80 space-y-2.5 text-xs">
+                <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
+                  <Clock className="w-4 h-4 text-sky-500 shrink-0" />
+                  <span className="font-medium">
+                    {new Date(selectedEvent.startTime).toLocaleString([], {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}{" "}
+                    –{" "}
+                    {new Date(selectedEvent.endTime).toLocaleTimeString([], {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
                 </div>
-              )}
 
-              {selectedEvent.studentName && (
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <Users className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Assigned Student: {selectedEvent.studentName}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between pt-2">
-              {canManageEvents && (
-                <button
-                  type="button"
-                  onClick={() => handleDeleteEvent(selectedEvent.id)}
-                  className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors cursor-pointer"
-                  title="Delete Event"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-
-              <div className="flex items-center gap-2 ml-auto">
-                {selectedEvent.meetUrl && (
-                  <a
-                    href={selectedEvent.meetUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold transition-all shadow-xs"
-                  >
-                    <Video className="w-3.5 h-3.5" />
-                    <span>Join Video Call</span>
-                  </a>
+                {selectedEvent.mentorName && (
+                  <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
+                    <Users className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span>
+                      Mentor: <strong className="text-slate-900 dark:text-white font-semibold">{selectedEvent.mentorName}</strong>
+                    </span>
+                  </div>
                 )}
 
-                {selectedEvent.courseId && (
+                {selectedEvent.courseTitle && (
+                  <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
+                    <BookOpen className="w-4 h-4 text-indigo-500 shrink-0" />
+                    <span>
+                      Course: <strong className="text-slate-900 dark:text-white font-semibold">{selectedEvent.courseTitle}</strong>
+                    </span>
+                  </div>
+                )}
+
+                {selectedEvent.studentName && (
+                  <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
+                    <Users className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>
+                      Student: <strong className="text-slate-900 dark:text-white font-semibold">{selectedEvent.studentName}</strong>
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-1 gap-2">
+                {canManageEvents && isCustomEvent ? (
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedEvent(null);
-                      navigate(`/player/${selectedEvent.courseId}`);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 text-xs font-bold transition-all hover:opacity-90 shadow-xs cursor-pointer"
+                    onClick={() => handleDeleteEvent(selectedEvent.id)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Open in LMS</span>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
                   </button>
-                )}
+                ) : <div />}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEvent(null)}
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+
+                  {selectedEvent.meetUrl && (
+                    <a
+                      href={selectedEvent.meetUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold transition-all shadow-xs"
+                    >
+                      <Video className="w-3.5 h-3.5" />
+                      <span>Join Video Call</span>
+                    </a>
+                  )}
+
+                  {selectedEvent.courseId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedEvent(null);
+                        navigate(`/player/${selectedEvent.courseId}`);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 text-xs font-bold transition-all hover:opacity-90 shadow-xs cursor-pointer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open in LMS</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Add Event Modal */}
       {isAddModalOpen && (
