@@ -619,7 +619,7 @@ export default function LmsPlayerPage() {
                 </p>
               </div>
 
-              {/* Progress Bar with Dynamic Percentage */}
+              {/* Progress Bar with Dynamic Count */}
               <div className="flex items-center gap-3 pt-1">
                 <div className="flex-1 h-2 bg-slate-800/80 rounded-full overflow-hidden border border-slate-700/50">
                   <div
@@ -627,8 +627,8 @@ export default function LmsPlayerPage() {
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
-                <span className="text-[11px] font-bold text-sky-300 shrink-0">
-                  {progressPercent}%
+                <span className="text-[11px] font-bold text-sky-300 shrink-0 font-mono">
+                  {completedCount} / {totalLessons}
                 </span>
               </div>
 

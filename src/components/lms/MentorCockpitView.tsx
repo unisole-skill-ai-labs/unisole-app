@@ -24,6 +24,8 @@ interface Mentee {
   avatar: string;
   college: string;
   progressPercent: number;
+  completedLessonsCount?: number;
+  totalLessonsCount?: number;
   submittedCount: number;
   pendingReviews: number;
   status: "NEEDS_REVIEW" | "ON_TRACK" | "AT_RISK";
@@ -269,11 +271,19 @@ export default function MentorCockpitView({
                           <div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-sky-500 rounded-full transition-all"
-                              style={{ width: `${mentee.progressPercent}%` }}
+                              style={{ width: `${mentee.progressPercent || 0}%` }}
                             />
                           </div>
                           <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400">
-                            {mentee.progressPercent}%
+                            {(() => {
+                              const total = mentee.totalLessonsCount ?? 10;
+                              const completed =
+                                mentee.completedLessonsCount ??
+                                (mentee.progressPercent > 0
+                                  ? Math.max(1, Math.round(((mentee.progressPercent || 0) / 100) * total))
+                                  : 0);
+                              return `${completed} / ${total}`;
+                            })()}
                           </span>
                         </div>
                       </div>
