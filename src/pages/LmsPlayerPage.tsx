@@ -776,78 +776,58 @@ export default function LmsPlayerPage() {
                     <span className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                       Assigned Program Mentor
                     </span>
-                    <span className="text-[11px] font-bold text-sky-500 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/20">
-                      {studentMentor?.officeHours || "Tue & Thu 6:00 - 7:30 PM IST"}
-                    </span>
                   </div>
 
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     <img
-                      src={studentMentor?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"}
+                      src={studentMentor?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"}
                       alt={studentMentor?.name || "Mentor"}
                       className="w-16 h-16 rounded-2xl object-cover border-2 border-sky-500/40 shrink-0"
                     />
                     <div className="min-w-0 flex-1">
                       <h5 className="text-base font-bold text-slate-900 dark:text-white truncate">
-                        {studentMentor?.name || "Dr. Vikram Sethi"}
+                        {studentMentor?.name || "Assigned Mentor"}
                       </h5>
                       <p className="text-xs text-sky-500 dark:text-sky-400 font-semibold truncate mt-0.5">
-                        {studentMentor?.specialization || "Principal AI Scientist & GenAI Systems"}
+                        {studentMentor?.specialization || "Technical Mentor & Project Evaluator"}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                        {studentMentor?.bio || "Guiding your weekly architecture huddles, capstone milestones, and production evaluations."}
+                        {studentMentor?.bio || "Senior technical mentor guiding student capstone projects and assessments."}
                       </p>
                     </div>
                   </div>
-
-                      <div className="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                        <button
-                          onClick={() => setSupportTicketOpen(true)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 text-xs font-bold transition-colors cursor-pointer"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          <span>Ask Mentor a Doubt</span>
-                        </button>
-                        <a
-                          href="https://calendar.google.com"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Book Office Hours</span>
-                        </a>
-                      </div>
-                    </div>
-
-                    {/* Cohort Classmates List */}
-                    <div className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xs space-y-3">
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
-                        Cohort Classmates & Collaborators
-                      </h4>
-                      <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {(cohortData?.peers || [
-                          { id: "p1", name: "Aarav Sharma", college: "IIIT Una (Sanjauli)", branch: "CSE AI/ML", status: "Active" },
-                          { id: "p2", name: "Priya Chauhan", college: "Govt College Sunni", branch: "B.Tech IT", status: "Active" },
-                          { id: "p3", name: "Rohan Verma", college: "Govt College Theog", branch: "BCA Systems", status: "Active" },
-                        ]).map((peer: any) => (
-                          <div key={peer.id} className="py-2.5 flex items-center justify-between first:pt-0 last:pb-0">
-                            <div className="min-w-0 pr-2">
-                              <h6 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                                {peer.name}
-                              </h6>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                                {peer.college} • {peer.branch}
-                              </p>
-                            </div>
-                            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full shrink-0">
-                              {peer.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                 </div>
+
+                {/* Program Classmates List */}
+                <div className="bg-white dark:bg-[#0B1120] rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xs space-y-3">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                    Program Classmates
+                  </h4>
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {(cohortData?.peers || [
+                      { id: "p1", name: "Priya Verma", college: "Centre of Excellence GDC Sanjauli", branch: "BCA", status: "Active Now" },
+                      { id: "p2", name: "Rohan Mehta", college: "GDC Theog", branch: "B.Sc CS", status: "Completed Week 1" },
+                      { id: "p3", name: "Ananya Thakur", college: "ABV GDC Sunni", branch: "B.Tech IT", status: "Active Now" },
+                      { id: "p4", name: "Sahil Rana", college: "GDC Sanjauli", branch: "BCA", status: "Week 2 in Progress" },
+                      { id: "p5", name: "Vikram Chauhan", college: "HPU Shimla", branch: "MCA", status: "Active 2h ago" },
+                    ]).map((peer: any) => (
+                      <div key={peer.id} className="py-2.5 flex items-center justify-between first:pt-0 last:pb-0">
+                        <div className="min-w-0 pr-2">
+                          <h6 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                            {peer.name}
+                          </h6>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                            {peer.college} • {peer.branch}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full shrink-0">
+                          {peer.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
 
             {overviewTab === "notes" && (
